@@ -19,7 +19,7 @@ if [ ! -x "./$EXECUTABLE" ]; then
 fi
 
 # Number of runs for each input size
-NUM_RUNS=5
+NUM_RUNS=10
 
 # Create output filename with timestamp
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
@@ -29,7 +29,7 @@ OUTPUT_FILE="${1}_results_${TIMESTAMP}.csv"
 echo "size,run,time" > $OUTPUT_FILE
 
 # Test with various input sizes
-for size in 10 100 1003 10003 10003 100003 1000001 3000000 8000000 10000001 40000089 80000000 200000000 500000057 800000000; do
+for size in 10 20 30 40 50 100 120 140 160 180 200; do
     for ((run=1; run<=NUM_RUNS; run++)); do
         # Run the binary and extract the timing information
         output=$(./$EXECUTABLE $size)
