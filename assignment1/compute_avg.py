@@ -14,6 +14,10 @@ def calculate_averages(csv_path, output_path=None):
             time = float(row[2])
             times_by_size[size].append(time)
 
+    for size in times_by_size:
+        times_by_size[size].sort()
+        if len(times_by_size[size]) > 4:
+            times_by_size[size] = times_by_size[size][2:-2]
     for size, times in times_by_size.items():
         avg_time = sum(times) / len(times)
         print(f"{size},{avg_time}")
