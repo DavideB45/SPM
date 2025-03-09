@@ -33,6 +33,7 @@
 
 # Output files
 *.txt
+*.log
 
 # vscode
 .vscode/
