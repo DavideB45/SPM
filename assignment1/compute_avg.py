@@ -29,20 +29,18 @@ def plot_average(csv_path):
         with open(path, 'r', newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
-                if not (int(row[0]) >= 100003):
-                    continue
                 x.append(int(row[0]))
                 y.append(float(row[1]))
-
-        plt.plot(x, y, label=path.split('_')[1].split('.')[0], marker='o')
+        plt.plot(x, y, label=path.split('_')[1].split('.')[0], marker='x')
     
     plt.xlabel('Array Size')
     plt.ylabel('Average Time (s)')
     plt.title('Average Time vs Array Size')
     plt.grid()
-    plt.xscale('log')
-    plt.yscale('log')
+    #plt.xscale('log')
+    #plt.yscale('log')
     plt.legend()
+    plt.savefig('average_time_small.png', dpi=300)
     plt.show()
 
 def plot_speedup(csv_path):
@@ -53,8 +51,6 @@ def plot_speedup(csv_path):
         with open(path, 'r', newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
-                if not (int(row[0]) >= 100003):
-                    continue
                 x[index].append(int(row[0]))
                 y[index].append(float(row[1]))
 
@@ -73,8 +69,11 @@ def plot_speedup(csv_path):
     plt.show()
 
 if __name__ == "__main__":
-    calculate_averages("plain_results_20250309_195641.csv", "avg_plain.csv")
-    calculate_averages("auto_results_20250309_195956.csv", "avg_auto.csv")
-    calculate_averages("avx_results_20250309_200133.csv", "avg_avx.csv")
+    #calculate_averages("plain_results_big.csv", "avg_plain.csv")
+    #calculate_averages("auto_results_big.csv", "avg_auto.csv")
+    #calculate_averages("avx_results_big.csv", "avg_avx.csv")
+    calculate_averages("plain_results_small.csv", "avg_plain.csv")
+    calculate_averages("auto_results_small.csv", "avg_auto.csv")
+    calculate_averages("avx_results_small.csv", "avg_avx.csv")
     plot_average(["avg_plain.csv", "avg_auto.csv", "avg_avx.csv"])
     plot_speedup(["avg_plain.csv", "avg_auto.csv", "avg_avx.csv"])
