@@ -23,6 +23,17 @@ const __m128i temp[5] = {
 	_mm_setr_epi32(-1, -1, -1, -1)
 };
 
+const __m256i mask_table[8] = {
+	_mm256_setr_epi32( 0,  0,  0,  0,  0,  0,  0,  0),  // cr = 0
+	_mm256_setr_epi32(-1,  0,  0,  0,  0,  0,  0,  0),  // cr = 1
+	_mm256_setr_epi32(-1, -1,  0,  0,  0,  0,  0,  0),  // cr = 2
+	_mm256_setr_epi32(-1, -1, -1,  0,  0,  0,  0,  0),  // cr = 3
+	_mm256_setr_epi32(-1, -1, -1, -1,  0,  0,  0,  0),  // cr = 4
+	_mm256_setr_epi32(-1, -1, -1, -1, -1,  0,  0,  0),  // cr = 5 (same as 4)
+	_mm256_setr_epi32(-1, -1, -1, -1, -1, -1,  0,  0),  // cr = 6 (same as 4)
+	_mm256_setr_epi32(-1, -1, -1, -1, -1, -1, -1,  0)   // cr = 7 (same as 4)
+};
+
 /*
 The following two functions were inspired from the slide of the curse,
 the only changes were the substitution of 'add' with 'sum'
@@ -76,11 +87,6 @@ void softmax_avx(const float *input, float *output, size_t K) {
 	max_val = _mm256_max_ps(_mm256_loadu_ps(input + K - 8), max_val); // process the last 8 elements
 	max_val = _mm256_set1_ps(hmax_avx(max_val)); // create a vector of max for subtraction
 
-	/*
-	Other options were a for loop
-	the for loop unrolled
-	*/
-
 	// computes all exponentials with the shift of max_val and the total sum
     __m256 sum_vector = _mm256_setzero_ps();
     for (size_t i = 0; i < K2; i += 8) {
@@ -90,12 +96,15 @@ void softmax_avx(const float *input, float *output, size_t K) {
         sum_vector = _mm256_add_ps(sum_vector, curr_val);
     }
 	const unsigned cr = K & 0x7U; // K % 8 made in a (probably) faster way
-	__m256i mask;
-	if(cr >= 4) { 
-        mask = _mm256_set_m128i(temp[cr&3], temp[4]);
-    } else {
-        mask = _mm256_set_m128i(temp[0], temp[cr]);
-    }
+	// __m256i mask;
+	// if(cr >= 4) { 
+    //     mask = _mm256_set_m128i(temp[cr&3], temp[4]);
+    // } else {
+    //     mask = _mm256_set_m128i(temp[0], temp[cr]);
+    // }
+
+	__m256i mask = mask_table[cr & 7];  // Fast lookup, avoiding branching
+
 	curr_val = _mm256_maskload_ps(input + K - cr, mask);
 	curr_val = exp256_ps(_mm256_sub_ps(curr_val, max_val));
 	_mm256_maskstore_ps(output + K - cr, mask, curr_val);
