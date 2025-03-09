@@ -64,7 +64,7 @@ inline float hsum_avx(__m256 v) {
 
 void softmax_avx(const float *input, float *output, size_t K) {
 	// if they are at least 8 else it does
-	int K2 = K-7;
+	size_t K2 = K-7;
 	//__m256 max_val = _mm256_loadu_ps(input);
 	__m256 max_val = _mm256_loadu_ps(input); 
 	// allineare la memoria
