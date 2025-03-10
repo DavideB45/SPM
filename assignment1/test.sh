@@ -29,7 +29,7 @@ OUTPUT_FILE="${1}_results_${TIMESTAMP}.csv"
 echo "size,run,time" > $OUTPUT_FILE
 
 # Test with various input sizes
-for size in 10 20 30 40 50 100 120 140 160 180 200; do
+for size in 10 20 30 40 50 60 70 80 90 100 120 140 160 180 200; do
     for ((run=1; run<=NUM_RUNS; run++)); do
         # Run the binary and extract the timing information
         output=$(./$EXECUTABLE $size)
