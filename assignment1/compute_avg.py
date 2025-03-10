@@ -45,7 +45,7 @@ def plot_average(csv_path):
     #plt.xscale('log')
     #plt.yscale('log')
     plt.legend()
-    #plt.savefig('average_time_small.png', dpi=300)
+    plt.savefig('average_time_small.png', dpi=300)
     plt.show()
 
 def plot_speedup(csv_path):
@@ -77,12 +77,12 @@ def plot_speedup(csv_path):
     plt.show()
 
 if __name__ == "__main__":
-    calculate_averages("plain_results_big.csv", "avg_plain.csv")
-    calculate_averages("auto_results_big.csv", "avg_auto.csv")
-    calculate_averages("avx_results_big.csv", "avg_avx.csv")
-    #calculate_averages("plain_results_small.csv", "avg_plain.csv")
-    #calculate_averages("auto_results_small.csv", "avg_auto.csv")
-    #calculate_averages("avx_results_small.csv", "avg_avx.csv")
+    #calculate_averages("plain_results_big.csv", "avg_plain.csv")
+    #calculate_averages("auto_results_big.csv", "avg_auto.csv")
+    #calculate_averages("avx_results_big.csv", "avg_avx.csv")
+    calculate_averages("plain_results_small.csv", "avg_plain.csv")
+    calculate_averages("auto_results_small.csv", "avg_auto.csv")
+    calculate_averages("avx_results_small.csv", "avg_avx.csv")
     plot_average(["avg_plain.csv", "avg_auto.csv", "avg_avx.csv"])
     plot_speedup(["avg_plain.csv", "avg_auto.csv", "avg_avx.csv"])
     os.remove("avg_plain.csv")
