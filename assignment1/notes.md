@@ -5,7 +5,7 @@ Presentare le tre versioni, dire qual'e' lo scopo dell'assignment, spiegare la d
 - steedy state
     - auto vs plain: 2.75
     - AVX  vs plain: 3.5
-    - AVX  vs auto : ??
+    - AVX  vs auto : 1.25
 - altre osservazioni:
     - inizialmente è molto più veloce AVX poi perde un po', che sia colpa della chache? solo supposizioni
     - auto nella fase iniziale non è super stabile, nessuno sa il perché però poi si riprende
@@ -17,7 +17,7 @@ Presentare le tre versioni, dire qual'e' lo scopo dell'assignment, spiegare la d
 
 ## Code
 ### AVX
-- disclaimer: servono almeno 8 elementi
+- disclaimer: servono almeno 8 elementi (per il primo loop, alternativa)
 - ciclo principale
 - gestione somma/massimo finale alla Torquati
 - gestione massimo non multiplo di 8
@@ -40,7 +40,8 @@ Altra nota: i valori non sono uguali alla millesima cifra per errori fatti dalla
 AVX è meglio ma è un casino, non mettere un flag che fa andare più veloce è follia.
 
 ## TODO
-- controllare che autovectorization abbia fatto tutto per davvero
-- controllare se allineare la memoria rallenta davvero
-- accettare meno di 8 elementi in AVX version
-- misurare avx contro auto
+- [x] controllare che autovectorization abbia fatto tutto per davvero
+- [x] controllare se allineare la memoria rallenta davvero
+- [x] accettare meno di 8 elementi in AVX version
+- [x] misurare avx contro auto
+- [] Roofline model??
