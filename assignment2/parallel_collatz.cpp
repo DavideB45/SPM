@@ -16,9 +16,10 @@ int task_size = 1;
 ull collatz(ull n);
 
 typedef struct {
-    vector<pair<ull, ull>>* ranges;
+    vector<pair<ull, ull>> ranges;
     ull* max_steps;
     ull curr_steps; // only for dynamic schedule
+    size_t curr_range; // only for dynamic scheduel
     mutex* max_steps_mutex;
 } thread_data;
 
@@ -110,9 +111,10 @@ int main(const int argc, const char *argv[]) {
     printf("Task size: %d\n", task_size);
 
     thread_data ranges_data = {
-        &ranges,                // ranges
+        ranges,                // ranges
         new ull(ranges.size()), // max_steps
         0,                      // curr_steps
+        0,                      // curr_range
         new mutex()             // max_steps_mutex
     };
 
@@ -125,6 +127,9 @@ int main(const int argc, const char *argv[]) {
         dinamic_collatz(ranges_data);
     } else {
         static_collatz(ranges_data);
+    }
+    for (size_t i = 0; i < ranges_data.ranges.size(); i++) {
+        printf("Range [%llu, %llu]: max_steps = %llu\n", ranges_data.ranges[i].first, ranges_data.ranges[i].second, ranges_data.max_steps[i]);
     }
     return 0;
 }
@@ -140,7 +145,11 @@ ull collatz(ull n) {
 
 void dinamic_collatz(thread_data& collatz_data){
     TIMERSTART(total);
-    //TODO: Implement dynamic schedule
+    vector<thread> threads(num_threads);
+    for (int i = 0; i < num_threads; i++) {
+        threads[i] = thread(dinamic_compute, ref(collatz_data), i);
+    }
+    join_threads(threads);
     TIMERSTOP(total);
 }
 
@@ -152,9 +161,6 @@ void static_collatz(thread_data& collatz_data){
     }
     join_threads(threads);
     TIMERSTOP(total);
-    for (size_t i = 0; i < collatz_data.ranges->size(); i++) {
-        printf("Range [%llu, %llu]: max_steps = %llu\n", collatz_data.ranges->at(i).first, collatz_data.ranges->at(i).second, collatz_data.max_steps[i]);
-    }
 }
 
 void static_compute(thread_data& collatz_data, int thread_id){
@@ -165,9 +171,9 @@ void static_compute(thread_data& collatz_data, int thread_id){
     ull chunk_offset = num_threads* task_size; // part to skip for subsequent iterations
     int in_c_index = 0; // index relative to the current chunk
     // compute all ranges
-    for (size_t i = 0; i < collatz_data.ranges->size(); i++) {
-        chunk_begin = thread_id * task_size + collatz_data.ranges->at(i).first;
-        end = collatz_data.ranges->at(i).second;
+    for (size_t i = 0; i < collatz_data.ranges.size(); i++) {
+        chunk_begin = thread_id * task_size + collatz_data.ranges[i].first;
+        end = collatz_data.ranges[i].second;
         // compute a single range
         for(; chunk_begin <= end; chunk_begin += chunk_offset){    
             // compute a single chunk
@@ -182,8 +188,42 @@ void static_compute(thread_data& collatz_data, int thread_id){
     }
 }
 
+// TODO: decide if reset (index is changed)
+// TODO: may be useful to have multiple lock
 void dinamic_compute(thread_data& collatz_data, int thread_id){
+    // get the task to compute (begin + end)
+    ull begin;// begin of the chunk to compute
+    ull end; // end of the chunk to compute
+    ull max_s;
+    ull curr_in_r; // current index range
+    pair<ull,ull>* curr_pair;// defined for readability
+    while (true)
+    {
+        {
+            unique_lock<mutex> lock(*collatz_data.max_steps_mutex);
+            if (collatz_data.curr_range >= collatz_data.ranges.size()) {
+                break;; // No more tasks to process
+            }
+            curr_in_r = collatz_data.curr_range;
+            curr_pair = &(collatz_data.ranges[collatz_data.curr_range]);
+            begin = curr_pair->first + collatz_data.curr_steps;
+            end = min(begin + task_size - 1, curr_pair->second);
+            collatz_data.curr_steps += task_size;
+            if (collatz_data.curr_steps + curr_pair->first >= curr_pair->second) {
+                collatz_data.curr_range++;
+                collatz_data.curr_steps = 0;
+            }
+        }
+        
+        // compute collatz
+        max_s = 0;
+        for (; begin <= end; begin++){
+            max_s = max(max_s, collatz(begin));
+        }
 
+        // update max
+        update_max_steps(curr_in_r, max_s, collatz_data);
+    }
 }
 
 void join_threads(vector<thread>& threads){
