@@ -193,7 +193,7 @@ void join_threads(vector<thread>& threads){
 }
 
 void update_max_steps(int range_index, ull steps, thread_data& collatz_data){
-    while (collatz_data.max_steps_mutex->try_lock() == false);
+    collatz_data.max_steps_mutex->lock();
     if(collatz_data.max_steps[range_index] < steps){
         collatz_data.max_steps[range_index] = steps;
     }
