@@ -171,8 +171,7 @@ void static_compute(thread_data& collatz_data, int thread_id){
         // compute a single range
         for(; chunk_begin <= end; chunk_begin += chunk_offset){    
             // compute a single chunk
-            for (in_c_index = 0; in_c_index < task_size; in_c_index++) {    
-                // TODO: stop if computing over the end of the range
+            for (in_c_index = 0; in_c_index < task_size && (chunk_begin + in_c_index < end); in_c_index++) {    
                 curr_steps = collatz(chunk_begin + in_c_index);
                 max_steps = max(max_steps, curr_steps);
             }
