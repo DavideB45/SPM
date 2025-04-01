@@ -69,7 +69,7 @@ void static_compute(thread_data& collatz_data, int thread_id);
 
 int main(const int argc, const char *argv[]) {
     if (argc < 2) {
-        cout << "Usage: " << argv[0] << "begin0-end0 ... beginN-endN" << endl;
+        cout << "Usage: " << argv[0] << "[-d] [-n 8] [-c 16] begin0-end0 ... beginN-endN" << endl;
         return 1;
     }
     vector<pair<ull, ull>> ranges;
@@ -116,7 +116,7 @@ int main(const int argc, const char *argv[]) {
         new mutex()             // max_steps_mutex
     };
 
-    for (int i = 0; i < ranges.size(); i++) {
+    for (size_t i = 0; i < ranges.size(); i++) {
         ranges_data.max_steps[i] = 1;
     }
 
@@ -148,28 +148,31 @@ void static_collatz(thread_data& collatz_data){
     TIMERSTART(total);
     vector<thread> threads(num_threads);
     for (int i = 0; i < num_threads; i++) {
-        threads[i] = thread(static_compute, collatz_data, i);
+        threads[i] = thread(static_compute, ref(collatz_data), i);
     }
     join_threads(threads);
     TIMERSTOP(total);
+    for (size_t i = 0; i < collatz_data.ranges->size(); i++) {
+        printf("Range [%llu, %llu]: max_steps = %llu\n", collatz_data.ranges->at(i).first, collatz_data.ranges->at(i).second, collatz_data.max_steps[i]);
+    }
 }
 
 void static_compute(thread_data& collatz_data, int thread_id){
     ull curr_steps = 0; // steps for the current number
     ull max_steps = 0; // max steps for the current range
-    ull begin = 0; // where to start for each range
     ull end = 0; // where to stop for each range
     ull chunk_begin = 0; // where to start for each chunk
     ull chunk_offset = num_threads* task_size; // part to skip for subsequent iterations
-    ull in_c_index = 0; // index relative to the current chunk
+    int in_c_index = 0; // index relative to the current chunk
     // compute all ranges
-    for (int i = 0; i < collatz_data.ranges->size(); i++) {
+    for (size_t i = 0; i < collatz_data.ranges->size(); i++) {
         chunk_begin = thread_id * task_size + collatz_data.ranges->at(i).first;
         end = collatz_data.ranges->at(i).second;
         // compute a single range
-        for(chunk_begin; chunk_begin <= end; chunk_begin += chunk_offset){    
+        for(; chunk_begin <= end; chunk_begin += chunk_offset){    
             // compute a single chunk
             for (in_c_index = 0; in_c_index < task_size; in_c_index++) {    
+                // TODO: stop if computing over the end of the range
                 curr_steps = collatz(chunk_begin + in_c_index);
                 max_steps = max(max_steps, curr_steps);
             }
@@ -180,8 +183,12 @@ void static_compute(thread_data& collatz_data, int thread_id){
     }
 }
 
+void dinamic_compute(thread_data& collatz_data, int thread_id){
+
+}
+
 void join_threads(vector<thread>& threads){
-    for (int i = 0; i < threads.size(); i++) {
+    for (size_t i = 0; i < threads.size(); i++) {
         threads[i].join();
     }
 }
