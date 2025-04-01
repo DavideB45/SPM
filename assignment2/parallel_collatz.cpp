@@ -16,12 +16,12 @@ int task_size = 1;
 ull collatz(ull n);
 
 typedef struct {
-    vector<pair<ull, ull>> ranges;
-    vector<ull> max_steps;
-    ull curr_steps; // only for dynamic schedule
-    size_t curr_range; // only for dynamic scheduel
-    mutex* max_steps_mutex;
-    mutex* curr_range_mutex;// only for dynamic schedule
+	vector<pair<ull, ull>> ranges;
+	vector<ull> max_steps;
+	ull curr_steps; // only for dynamic schedule
+	size_t curr_range; // only for dynamic scheduel
+	mutex* max_steps_mutex;
+	mutex* curr_range_mutex;// only for dynamic schedule
 } thread_data;
 
 /**
@@ -70,178 +70,178 @@ void static_collatz(thread_data& collatz_data);
 void static_compute(thread_data& collatz_data, int thread_id);
 
 int main(const int argc, const char *argv[]) {
-    if (argc < 2) {
-        cout << "Usage: " << argv[0] << "[-d] [-n 8] [-c 16] begin0-end0 ... beginN-endN" << endl;
-        return 1;
-    }
-    vector<pair<ull, ull>> ranges;
-    for(int i = 1; i < argc; i++) {
-        // this for was written by ChatGpt
-        string curr_arg = argv[i];
-        size_t pos = curr_arg.find("-");
-        if (pos == string::npos) {
-            cout << "Invalid range: " << curr_arg << endl;
-            return 1;
-        }
-        if(pos == 0){
-            if(curr_arg[1] == 'd'){
-                dynamic_schedule = true;
-            } else if(curr_arg[1] == 'n'){
-                /* num threads */
-                i++;
-                num_threads = stoi(argv[i]);
-            } else if(curr_arg[1] == 'c'){
-                /* chunk size */
-                i++;
-                task_size = stoi(argv[i]);
-            } else {
-                cout << "Invalid argument: " << curr_arg << endl;
-                return 1;
-            }
-            continue;
-        }
-        ranges.push_back({stoull(curr_arg.substr(0, pos)), stoull(curr_arg.substr(pos+1))});
-        if(ranges.back().first > ranges.back().second) {
-            cout << "Invalid range: " << curr_arg << endl;
-            return 1;
-        }
-    }
+	if (argc < 2) {
+		cout << "Usage: " << argv[0] << "[-d] [-n 8] [-c 16] begin0-end0 ... beginN-endN" << endl;
+		return 1;
+	}
+	vector<pair<ull, ull>> ranges;
+	for(int i = 1; i < argc; i++) {
+		// this for was written by ChatGpt
+		string curr_arg = argv[i];
+		size_t pos = curr_arg.find("-");
+		if (pos == string::npos) {
+			cout << "Invalid range: " << curr_arg << endl;
+			return 1;
+		}
+		if(pos == 0){
+			if(curr_arg[1] == 'd'){
+				dynamic_schedule = true;
+			} else if(curr_arg[1] == 'n'){
+				/* num threads */
+				i++;
+				num_threads = stoi(argv[i]);
+			} else if(curr_arg[1] == 'c'){
+				/* chunk size */
+				i++;
+				task_size = stoi(argv[i]);
+			} else {
+				cout << "Invalid argument: " << curr_arg << endl;
+				return 1;
+			}
+			continue;
+		}
+		ranges.push_back({stoull(curr_arg.substr(0, pos)), stoull(curr_arg.substr(pos+1))});
+		if(ranges.back().first > ranges.back().second) {
+			cout << "Invalid range: " << curr_arg << endl;
+			return 1;
+		}
+	}
 
-    printf("Dynamic schedule: %s\n", dynamic_schedule ? "true" : "false");
-    printf("Number of threads: %d\n", num_threads);
-    printf("Task size: %d\n", task_size);
+	printf("Dynamic schedule: %s\n", dynamic_schedule ? "true" : "false");
+	printf("Number of threads: %d\n", num_threads);
+	printf("Task size: %d\n", task_size);
 
-    thread_data ranges_data = {
-        ranges,                // ranges
-        vector<ull>(ranges.size(), 1), // max_steps
-        0,                      // curr_steps
-        0,                      // curr_range
-        new mutex(),            // max_steps_mutex
-        new mutex()             // curr_range_mutex
-    };
+	thread_data ranges_data = {
+		ranges,                // ranges
+		vector<ull>(ranges.size(), 1), // max_steps
+		0,                      // curr_steps
+		0,                      // curr_range
+		new mutex(),            // max_steps_mutex
+		new mutex()             // curr_range_mutex
+	};
 
-    for (size_t i = 0; i < ranges.size(); i++) {
-        ranges_data.max_steps[i] = 1;
-    }
+	for (size_t i = 0; i < ranges.size(); i++) {
+		ranges_data.max_steps[i] = 1;
+	}
 
 
-    if(dynamic_schedule){
-        dinamic_collatz(ranges_data);
-    } else {
-        static_collatz(ranges_data);
-    }
-    for (size_t i = 0; i < ranges_data.ranges.size(); i++) {
-        printf("Range [%llu, %llu]: max_steps = %llu\n", ranges_data.ranges[i].first, ranges_data.ranges[i].second, ranges_data.max_steps[i]);
-    }
-    return 0;
+	if(dynamic_schedule){
+		dinamic_collatz(ranges_data);
+	} else {
+		static_collatz(ranges_data);
+	}
+	for (size_t i = 0; i < ranges_data.ranges.size(); i++) {
+		printf("Range [%llu, %llu]: max_steps = %llu\n", ranges_data.ranges[i].first, ranges_data.ranges[i].second, ranges_data.max_steps[i]);
+	}
+	return 0;
 }
 
 ull collatz(ull n) {
-    ull steps = 0;
-    while (n != 1) {
-        n = n % 2 == 0 ? n / 2 : 3 * n + 1;
-        steps++;
-    }
-    return steps;
+	ull steps = 0;
+	while (n != 1) {
+		n = n % 2 == 0 ? n / 2 : 3 * n + 1;
+		steps++;
+	}
+	return steps;
 }
 
 void dinamic_collatz(thread_data& collatz_data){
-    TIMERSTART(total);
-    vector<thread> threads(num_threads);
-    for (int i = 0; i < num_threads; i++) {
-        threads[i] = thread(dinamic_compute, ref(collatz_data), i);
-    }
-    join_threads(threads);
-    TIMERSTOP(total);
+	TIMERSTART(total);
+	vector<thread> threads(num_threads);
+	for (int i = 0; i < num_threads; i++) {
+		threads[i] = thread(dinamic_compute, ref(collatz_data), i);
+	}
+	join_threads(threads);
+	TIMERSTOP(total);
 }
 
 void static_collatz(thread_data& collatz_data){
-    TIMERSTART(total);
-    vector<thread> threads(num_threads);
-    for (int i = 0; i < num_threads; i++) {
-        threads[i] = thread(static_compute, ref(collatz_data), i);
-    }
-    join_threads(threads);
-    TIMERSTOP(total);
+	TIMERSTART(total);
+	vector<thread> threads(num_threads);
+	for (int i = 0; i < num_threads; i++) {
+		threads[i] = thread(static_compute, ref(collatz_data), i);
+	}
+	join_threads(threads);
+	TIMERSTOP(total);
 }
 
 void static_compute(thread_data& collatz_data, int thread_id){
-    ull curr_steps = 0; // steps for the current number
-    ull max_steps = 0; // max steps for the current range
-    ull end = 0; // where to stop for each range
-    ull chunk_begin = 0; // where to start for each chunk
-    ull chunk_offset = num_threads* task_size; // part to skip for subsequent iterations
-    int in_c_index = 0; // index relative to the current chunk
-    // compute all ranges
-    for (size_t i = 0; i < collatz_data.ranges.size(); i++) {
-        chunk_begin = thread_id * task_size + collatz_data.ranges[i].first;
-        end = collatz_data.ranges[i].second;
-        // compute a single range
-        for(; chunk_begin <= end; chunk_begin += chunk_offset){    
-            // compute a single chunk
-            for (in_c_index = 0; in_c_index < task_size && (chunk_begin + in_c_index < end); in_c_index++) {    
-                curr_steps = collatz(chunk_begin + in_c_index);
-                max_steps = max(max_steps, curr_steps);
-            }
-        }
-        // update max steps
-        update_max_steps(i, max_steps, collatz_data);
-        max_steps = 0;
-    }
+	ull curr_steps = 0; // steps for the current number
+	ull max_steps = 0; // max steps for the current range
+	ull end = 0; // where to stop for each range
+	ull chunk_begin = 0; // where to start for each chunk
+	ull chunk_offset = num_threads* task_size; // part to skip for subsequent iterations
+	int in_c_index = 0; // index relative to the current chunk
+	// compute all ranges
+	for (size_t i = 0; i < collatz_data.ranges.size(); i++) {
+		chunk_begin = thread_id * task_size + collatz_data.ranges[i].first;
+		end = collatz_data.ranges[i].second;
+		// compute a single range
+		for(; chunk_begin <= end; chunk_begin += chunk_offset){    
+			// compute a single chunk
+			for (in_c_index = 0; in_c_index < task_size && (chunk_begin + in_c_index < end); in_c_index++) {    
+				curr_steps = collatz(chunk_begin + in_c_index);
+				max_steps = max(max_steps, curr_steps);
+			}
+		}
+		// update max steps
+		update_max_steps(i, max_steps, collatz_data);
+		max_steps = 0;
+	}
 }
 
 // TODO: decide if reset (index is changed)
 // TODO: may be useful to have multiple lock
 void dinamic_compute(thread_data& collatz_data, int thread_id){
-    ull begin;// begin of the chunk to compute
-    ull end; // end of the chunk to compute
-    ull curr_in_r = 0; // current index range
-    pair<ull,ull>* curr_pair;// defined for readability
-    std::vector<ull> max_steps(collatz_data.ranges.size(), 0);
-    while (true)
-    {
-        {
-            unique_lock<mutex> lock(*collatz_data.curr_range_mutex);
-            //if(collatz_data.curr_range > curr_in_r){
-            //    collatz_data.max_steps[curr_in_r] = max(max_s, collatz_data.max_steps[curr_in_r]);
-            //}
-            if (collatz_data.curr_range >= collatz_data.ranges.size()) {
-                break; // No more tasks to process
-            }
-            curr_in_r = collatz_data.curr_range;
-            curr_pair = &(collatz_data.ranges[collatz_data.curr_range]);
-            begin = curr_pair->first + collatz_data.curr_steps;
-            end = min(begin + task_size - 1, curr_pair->second);
-            collatz_data.curr_steps += task_size;
-            if (collatz_data.curr_steps + curr_pair->first >= curr_pair->second) {
-                collatz_data.curr_range++;
-                collatz_data.curr_steps = 0;
-            }
-        }
-        
-        // compute collatz
-        for (; begin <= end; begin++){
-            max_steps[curr_in_r] = max(max_steps[curr_in_r], collatz(begin));
-        }
-    }
-    // // update max steps
-    collatz_data.max_steps_mutex->lock();
-    for (size_t i = 0; i < collatz_data.ranges.size(); i++) {
-        collatz_data.max_steps[i] = max(max_steps[i], collatz_data.max_steps[i]);
-    }
-    collatz_data.max_steps_mutex->unlock();
+	ull begin;// begin of the chunk to compute
+	ull end; // end of the chunk to compute
+	ull curr_in_r = 0; // current index range
+	pair<ull,ull>* curr_pair;// defined for readability
+	std::vector<ull> max_steps(collatz_data.ranges.size(), 0);
+	while (true)
+	{
+		{
+			unique_lock<mutex> lock(*collatz_data.curr_range_mutex);
+			//if(collatz_data.curr_range > curr_in_r){
+			//    collatz_data.max_steps[curr_in_r] = max(max_s, collatz_data.max_steps[curr_in_r]);
+			//}
+			if (collatz_data.curr_range >= collatz_data.ranges.size()) {
+				break; // No more tasks to process
+			}
+			curr_in_r = collatz_data.curr_range;
+			curr_pair = &(collatz_data.ranges[collatz_data.curr_range]);
+			begin = curr_pair->first + collatz_data.curr_steps;
+			end = min(begin + task_size - 1, curr_pair->second);
+			collatz_data.curr_steps += task_size;
+			if (collatz_data.curr_steps + curr_pair->first >= curr_pair->second) {
+				collatz_data.curr_range++;
+				collatz_data.curr_steps = 0;
+			}
+		}
+		
+		// compute collatz
+		for (; begin <= end; begin++){
+			max_steps[curr_in_r] = max(max_steps[curr_in_r], collatz(begin));
+		}
+	}
+	// // update max steps
+	collatz_data.max_steps_mutex->lock();
+	for (size_t i = 0; i < collatz_data.ranges.size(); i++) {
+		collatz_data.max_steps[i] = max(max_steps[i], collatz_data.max_steps[i]);
+	}
+	collatz_data.max_steps_mutex->unlock();
 }
 
 void join_threads(vector<thread>& threads){
-    for (size_t i = 0; i < threads.size(); i++) {
-        threads[i].join();
-    }
+	for (size_t i = 0; i < threads.size(); i++) {
+		threads[i].join();
+	}
 }
 
 void update_max_steps(int range_index, ull steps, thread_data& collatz_data){
-    collatz_data.max_steps_mutex->lock();
-    if(collatz_data.max_steps[range_index] < steps){
-        collatz_data.max_steps[range_index] = steps;
-    }
-    collatz_data.max_steps_mutex->unlock();
+	collatz_data.max_steps_mutex->lock();
+	if(collatz_data.max_steps[range_index] < steps){
+		collatz_data.max_steps[range_index] = steps;
+	}
+	collatz_data.max_steps_mutex->unlock();
 }
