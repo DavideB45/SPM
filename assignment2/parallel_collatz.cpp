@@ -22,14 +22,49 @@ typedef struct {
     mutex* max_steps_mutex;
 } thread_data;
 
+/**
+ * @brief Joins all threads in the provided vector.
+ * 
+ * This function is a wrapper around the join() method of the std::thread class.
+ * It joins all threads in the provided vector, effectively waiting for all threads
+ * to finish their execution.
+ * 
+ * @param threads A reference to the vector containing the threads to join.
+ */
 void join_threads(vector<thread>& threads);
 
+/**
+ * @brief Updates the maximum number of steps for a given range index if the provided steps are greater.
+ * 
+ * This function is thread-safe and ensures that the maximum steps for a specific range index
+ * are updated only if the new steps value is greater than the current maximum. It uses a mutex
+ * to synchronize access to the shared data structure.
+ * 
+ * @param range_index The index of the range for which the maximum steps are being updated.
+ * @param steps The number of steps to compare with the current maximum.
+ * @param collatz_data A reference to the thread_data structure containing the shared data,
+ *                     including the maximum steps array and the mutex for synchronization.
+ */
+void update_max_steps(int range_index, ull steps, thread_data& collatz_data);
+
+/**
+ * @brief Computes the Collatz sequence for the provided ranges using a dinamic schedule.
+ */
 void dinamic_collatz(thread_data& collatz_data);
 
+/**
+ * @brief Computes the Collatz sequence for the provided ranges to be used by the spawned threads.
+ */
 void dinamic_compute(thread_data& collatz_data, int thread_id);
 
+/**
+ * @brief Computes the Collatz sequence for the provided ranges using a static schedule.
+ */
 void static_collatz(thread_data& collatz_data);
 
+/**
+ * @brief Computes the Collatz sequence for the provided ranges to be used by the spawned threads.
+ */
 void static_compute(thread_data& collatz_data, int thread_id);
 
 int main(const int argc, const char *argv[]) {
@@ -120,12 +155,28 @@ void static_collatz(thread_data& collatz_data){
 }
 
 void static_compute(thread_data& collatz_data, int thread_id){
-    ull curr_steps = 0;
+    ull curr_steps = 0; // steps for the current number
+    ull max_steps = 0; // max steps for the current range
+    ull begin = 0; // where to start for each range
+    ull end = 0; // where to stop for each range
+    ull chunk_begin = 0; // where to start for each chunk
+    ull chunk_offset = num_threads* task_size; // part to skip for subsequent iterations
+    ull in_c_index = 0; // index relative to the current chunk
+    // compute all ranges
     for (int i = 0; i < collatz_data.ranges->size(); i++) {
-        ull begin = collatz_data.ranges->at(i).first;
-        ull end = collatz_data.ranges->at(i).second;
-        
-        
+        chunk_begin = thread_id * task_size + collatz_data.ranges->at(i).first;
+        end = collatz_data.ranges->at(i).second;
+        // compute a single range
+        for(chunk_begin; chunk_begin <= end; chunk_begin += chunk_offset){    
+            // compute a single chunk
+            for (in_c_index = 0; in_c_index < task_size; in_c_index++) {    
+                curr_steps = collatz(chunk_begin + in_c_index);
+                max_steps = max(max_steps, curr_steps);
+            }
+        }
+        // update max steps
+        update_max_steps(i, max_steps, collatz_data);
+        max_steps = 0;
     }
 }
 
@@ -133,4 +184,12 @@ void join_threads(vector<thread>& threads){
     for (int i = 0; i < threads.size(); i++) {
         threads[i].join();
     }
+}
+
+void update_max_steps(int range_index, ull steps, thread_data& collatz_data){
+    collatz_data.max_steps_mutex->lock();
+    if(collatz_data.max_steps[range_index] < steps){
+        collatz_data.max_steps[range_index] = steps;
+    }
+    collatz_data.max_steps_mutex->unlock();
 }
