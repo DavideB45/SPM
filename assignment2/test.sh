@@ -1,45 +1,90 @@
 #!/bin/bash
 
+# PROBLEM 1 represents many small ranges
+# PROBLEM 2 represents a few large ranges
+# PROBLEM 3 is a mix of small and large ranges
+
 # Define parameters
-THREADS=(2 4 8 16)  # Different numbers of threads
-CHUNKS=(50 100 500 1000)  # Different chunk sizes
+THREADS=(2 4 8 16 32)  # Different numbers of threads
+CHUNKS=(1 10 50 100 1000)  # Different chunk sizes
 # Many small ranges
 PROBLEM_1=()
 START=1
 END=1000
 OFFSET=357 # this is a number arbitrarely chosen to update the start and end values and make them not too close
-for i in {1..10}; do
+for i in {1..3000}; do
 	PROBLEM_1+=("$START-$END") # Add range to list
 	START=$((END + OFFSET)) # Update start
 	END=$((START + 999)) # Update end (1000 numbers in each range)
 done
-echo "Problem 1: ${PROBLEM_1[@]}"
-exit 0
+
+# Few large ranges
+PROBLEM_2=("1-1000000" "4000001-6000000" "30000000-35000000" "4000001-5000000" "50000000-100000000")
+
+# Mix of small and large ranges
+PROBLEM_3=()
+for i in {1..50}; do
+	if [ $((i % 8)) -eq 0 ]; then
+		PROBLEM_3+=("${PROBLEM_2[$((i % ${#PROBLEM_2[@]}))]}") # Add large range
+	else
+		PROBLEM_3+=("${PROBLEM_1[$i]}") # Add small range
+	fi
+done
 EXECUTABLE="./parallel_collatz.out"  # Path to compiled C++ program
-OUTPUT_FILE="collatz_results.txt"  # Log file
+OUTPUT_FILE="collatz_results.csv"  # Log file
 
-# Clear output file
-echo "Collatz Parallel Execution Results" > "$OUTPUT_FILE"
-echo "===================================" >> "$OUTPUT_FILE"
+echo "threads,chunk_size,problem,dynamic,free,time" > $OUTPUT_FILE
 
-for n in "${THREADS[@]}"; do # Loop over thread counts
-	for c in "${CHUNKS[@]}"; do # Loop over chunk sizes
-		for r in "${RANGES[@]}"; do # Loop over ranges
-			echo "Running with -n $n -c $c for ranges: $r"
-			echo "-----------------------------------" >> "$OUTPUT_FILE"
-			echo "Threads: $n | Chunk: $c | Ranges: $r" >> "$OUTPUT_FILE"
+SEQUENTIAL="./sequential_collatz.out"  # Path to compiled C++ program
+################################## SEQUENTIAL ##################################
+#        t c p d f
+echo -n "0,0,1,0,0," >> $OUTPUT_FILE
+$SEQUENTIAL ${PROBLEM_1[@]} | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+#        t c p d f
+echo -n "0,0,2,0,0," >> $OUTPUT_FILE
+$SEQUENTIAL ${PROBLEM_2[@]} | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+#        t c p d f
+echo -n "0,0,3,0,0," >> $OUTPUT_FILE
+$SEQUENTIAL ${PROBLEM_3[@]} | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+	
+# Run tests
+for threads in ${THREADS[@]}; do
+	for chunk in ${CHUNKS[@]}; do
+		############################## STATIC SCHEDULING ##############################
+		#           t       c    p d f
+		echo -n "$threads,$chunk,1,0,0," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_1[@]} "-n" $threads "-c" $chunk | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+		#           t       c    p d f
+		echo -n "$threads,$chunk,2,0,0," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_2[@]} "-n" $threads "-c" $chunk | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+		#           t       c    p d f
+		echo -n "$threads,$chunk,3,0,0," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_2[@]} "-n" $threads "-c" $chunk | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+	
+		############################## DYNAMIC SCHEDULING ##############################
+		################################## USING LOCK ##################################
+		#           t       c    p d f
+		echo -n "$threads,$chunk,1,1,0," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_1[@]} "-n" $threads "-c" $chunk "-d" | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+		#           t       c    p d f
+		echo -n "$threads,$chunk,2,1,0," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_2[@]} "-n" $threads "-c" $chunk "-d" | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+		#           t       c    p d f
+		echo -n "$threads,$chunk,3,1,0," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_3[@]} "-n" $threads "-c" $chunk "-d" | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
 
-			# Measure execution time
-			START_TIME=$(date +%s.%N)
-			$EXECUTABLE -n $n -c $c $r >> "$OUTPUT_FILE" 2>&1
-			END_TIME=$(date +%s.%N)
-
-			# Compute elapsed time
-			ELAPSED_TIME=$(echo "$END_TIME - $START_TIME" | bc)
-			echo "Execution Time: $ELAPSED_TIME seconds" >> "$OUTPUT_FILE"
-			echo "-----------------------------------" >> "$OUTPUT_FILE"
-		done
+		############################## DYNAMIC SCHEDULING ##############################
+		################################## LOCK FREE ###################################
+		#           t       c    p d f
+		echo -n "$threads,$chunk,1,1,1," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_1[@]} "-n" $threads "-c" $chunk "-d" "-f" | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+		#           t       c    p d f
+		echo -n "$threads,$chunk,2,1,1," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_2[@]} "-n" $threads "-c" $chunk "-d" "-f" | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+		#           t       c    p d f
+		echo -n "$threads,$chunk,3,1,1," >> $OUTPUT_FILE
+		$EXECUTABLE ${PROBLEM_3[@]} "-n" $threads "-c" $chunk "-d" "-f" | grep 'total' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
+	
+	
 	done
 done
-
-echo "All tests completed. Results saved in $OUTPUT_FILE."

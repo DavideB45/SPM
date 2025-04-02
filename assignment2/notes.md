@@ -12,3 +12,6 @@ Nella versione statica la policy migliore dipende da come ci aspettiamo che arri
 - in alteranativa al sopra uno che usa il modulo num thread del numero non del thread (un po' piu' randomica)
 
 Provare anche ad usare una threadpool
+
+# Analisi teorica
+da fare, c'e' poco da dire
