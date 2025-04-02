@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <atomic>
 #include <thread>
 #include <hpc_helpers.hpp>
 
@@ -10,6 +11,7 @@ using namespace std;
 using ull = unsigned long long;
 
 bool dynamic_schedule = false;
+bool lock_free = false;
 int num_threads = 16;
 int task_size = 1;
 
@@ -23,6 +25,11 @@ typedef struct {
 	mutex* max_steps_mutex;
 	mutex* curr_range_mutex;// only for dynamic schedule
 } thread_data;
+
+typedef struct {
+	vector<pair<ull, ull>> ranges;
+	vector<ull> max_steps;
+} lock_free_data;
 
 /**
  * @brief Joins all threads in the provided vector.
