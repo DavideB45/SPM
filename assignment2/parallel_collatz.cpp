@@ -161,10 +161,11 @@ int main(const int argc, const char *argv[]) {
 		vector<atomic<ull>>(ranges.size())
 	};
 
-	// for (size_t i = 0; i < ranges.size(); i++) {
-	// 	ranges_data.max_steps[i] = 1;
-	// }
-
+	// this should not be necessary, but it is better to be safe than sorry
+	for(int i = 0; i < ranges.size(); i++){
+		lock_free_data.max_steps[i] = 0;
+		lock_free_data.curr_steps[i] = 0;
+	}
 
 	if(dynamic_schedule){
 		if(lock_free){
@@ -241,8 +242,6 @@ void static_compute(thread_data& collatz_data, int thread_id){
 	}
 }
 
-// TODO: decide if reset (index is changed)
-// TODO: may be useful to have multiple lock
 void dinamic_compute(thread_data& collatz_data, int thread_id){
 	ull begin;// begin of the chunk to compute
 	ull end; // end of the chunk to compute
