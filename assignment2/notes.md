@@ -1,11 +1,19 @@
 # Analisi teorica
-da fare, c'e' poco da dire
+grafichino carino fatto con le mie mani (vedi disegnino)
+poi fai qualche test per vedere quanti stepz richiede in un range fissato, puo' essere quello dell'esempio del prof per semplicita':
+- in media per un range
+- salvare anche il numero piu' grande perche' da il tempo massimo e l'upperbound
+- salvare anche il totale numero di step che non so perche' ma puo' servire
+- il tempo medio per uno step, tipo fai andare con quei range, hai il totale e il tempo totale pui fare una stima per capire quanto tempo dovrebbe richiedere se parallelizzato
 
 # Analisi pratica
 
 ## sequenziale
 nulla da dire, e' sequenziale
 loop unrolling non ha migliorato
+
+## multithread generico
+per ogni versione aggiungere un'analisi dello scalamento forte
 
 ## static sceduling
 Con il modo naive se i range sono molto piccoli gli ultimi thread non fanno nulla nella versione statica. Nella versione dinamica il problema non si pone.
@@ -26,8 +34,11 @@ figo, a volte vince, a volte perde
 threadpool che permette di fare le cose facendo fare meno calcoli al nostro worker
 
 ## overall
-quanto costa spawnare i thread?
-tabella in cui per i 3 diversi task do i tempi migliori di ciascuna perhche' non ha senso confrontare tutti allo stesso modo
+qui devo fornire un confronto tra i vari algoritmi dicendo quando ciascuno e' preferibile agli altri analizzando i vari casi
+- quanto costa spawnare i thread?
+- tabella in cui per i 3 diversi task do i tempi migliori di ciascuna perhche' non ha senso confrontare tutti allo stesso modo
+- 
 
 # Mixed analysis
 confrontare se la teoria aveva senso, non posso saperlo al momento
+fare un calcolo teorico tipo con un numero particolare di thread per semplicita' usando la versione migliore che ho creato (non so quale sia)

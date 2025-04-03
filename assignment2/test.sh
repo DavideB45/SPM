@@ -31,7 +31,7 @@ for i in {1..50}; do
 	fi
 done
 EXECUTABLE="./parallel_collatz.out"  # Path to compiled C++ program
-OUTPUT_FILE="collatz_results.csv"  # Log file
+OUTPUT_FILE="collatz_results_2.csv"  # Log file
 
 echo "threads,chunk_size,problem,dynamic,free,time" > $OUTPUT_FILE
 
