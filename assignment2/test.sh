@@ -5,7 +5,7 @@
 # PROBLEM 3 is a mix of small and large ranges
 
 # Define parameters
-THREADS=(2 4 8 16 32)  # Different numbers of threads
+THREADS=(2 4 8 16 32 1)  # Different numbers of threads
 CHUNKS=(1 10 50 100 1000)  # Different chunk sizes
 # Many small ranges
 PROBLEM_1=()
