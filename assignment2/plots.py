@@ -89,9 +89,8 @@ def plot_best_time(data: pd.DataFrame) -> None:
 	for i, problem in enumerate(["1", "2", "3"]):
 		ax[i].set_title(problem_names[i])
 		ax[i].set_xlabel("Number of Threads")
-		#ax[i].set_ylabel("Time (s)")
-		ax[i].set_ylabel("Speedup")
-		#ax[i].set_yscale("log")  # Set y-axis to log scale
+		ax[i].set_ylabel("Time (s)")
+		ax[i].set_yscale("log")  # Set y-axis to log scale
 		ax[i].set_xticks(range(6))
 		ax[i].set_xticklabels([1, 2, 4, 8, 16, 32])
 		ax[i].plot(times["dynamic"][problem], label="Dynamic", color=colors[0], marker='x')
@@ -100,7 +99,7 @@ def plot_best_time(data: pd.DataFrame) -> None:
 		#ax[i].axhline(y=sequential[problem][0], color='red', linestyle='--', label="Sequential")
 		ax[i].legend()
 		ax[i].grid()
-	fig.savefig("speedup.png", dpi=300)
+	fig.savefig("speedup_log.png", dpi=300)
 	plt.show()
 	
 		
