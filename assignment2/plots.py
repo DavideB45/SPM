@@ -54,6 +54,7 @@ def plot_best_time(data: pd.DataFrame) -> None:
 	for problem in [1, 2, 3]:
 		for n_threads in [1, 2, 4, 8, 16, 32]:
 			times["dynamic"][str(problem)].append(
+				sequential[str(problem)][0] /
 				data[
 					(data["problem"] == problem) &
 					(data["threads"] == n_threads) & 
@@ -62,6 +63,7 @@ def plot_best_time(data: pd.DataFrame) -> None:
 				]["time"].min()
 			)
 			times["static"][str(problem)].append(
+				sequential[str(problem)][0] /
 				data[
 					(data["problem"] == problem) & 
 					(data["threads"] == n_threads) & 
@@ -70,6 +72,7 @@ def plot_best_time(data: pd.DataFrame) -> None:
 				]["time"].min()
 			)
 			times["dynamic_lf"][str(problem)].append(
+				sequential[str(problem)][0] /
 				data[
 					(data["problem"] == problem) & 
 					(data["threads"] == n_threads) & 
@@ -79,7 +82,7 @@ def plot_best_time(data: pd.DataFrame) -> None:
 			)
 
 	fig, ax = plt.subplots(1, 3, figsize=(15, 5))
-	fig.suptitle("Best Time for Each Problem")
+	fig.suptitle("Speedup for Each Problem")
 	fig.tight_layout(pad=3.0)
 	colors = ["blue", "orange", "green"]
 	problem_names = ["Problem 1", "Problem 2", "Problem 3"]
@@ -87,16 +90,16 @@ def plot_best_time(data: pd.DataFrame) -> None:
 		ax[i].set_title(problem_names[i])
 		ax[i].set_xlabel("Number of Threads")
 		ax[i].set_ylabel("Time (s)")
-		ax[i].set_yscale("log")  # Set y-axis to log scale
+		#ax[i].set_yscale("log")  # Set y-axis to log scale
 		ax[i].set_xticks(range(6))
 		ax[i].set_xticklabels([1, 2, 4, 8, 16, 32])
 		ax[i].plot(times["dynamic"][problem], label="Dynamic", color=colors[0], marker='x')
 		ax[i].plot(times["static"][problem], label="Static", color=colors[1], marker='x')
 		ax[i].plot(times["dynamic_lf"][problem], label="Dynamic Lock Free", color=colors[2], marker='x')
-		ax[i].axhline(y=sequential[problem][0], color='red', linestyle='--', label="Sequential")
+		#ax[i].axhline(y=sequential[problem][0], color='red', linestyle='--', label="Sequential")
 		ax[i].legend()
 		ax[i].grid()
-	fig.savefig("best_time.png", dpi=300)
+	fig.savefig("speedup.png", dpi=300)
 	plt.show()
 	
 		
