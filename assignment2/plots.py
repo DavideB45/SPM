@@ -96,7 +96,7 @@ def plot_best_time(data: pd.DataFrame) -> None:
 		ax[i].axhline(y=sequential[problem][0], color='red', linestyle='--', label="Sequential")
 		ax[i].legend()
 		ax[i].grid()
-	fig.savefig("best_time.png")
+	fig.savefig("best_time.png", dpi=300)
 	plt.show()
 	
 		
