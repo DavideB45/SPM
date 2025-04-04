@@ -11,6 +11,7 @@ poi fai qualche test per vedere quanti stepz richiede in un range fissato, puo' 
 ## sequenziale
 nulla da dire, e' sequenziale
 loop unrolling non ha migliorato
+la print sta nel tempo, zio pera non me ne ero accoroto
 
 ## multithread generico
 per ogni versione aggiungere un'analisi dello scalamento forte
