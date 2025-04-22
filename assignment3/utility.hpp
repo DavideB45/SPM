@@ -145,6 +145,8 @@ static bool isNumber(const char* s, long &n) {
 		return false;
     }
 }
+// check if option is present in the command line
+// if it is, it returns the value of the option, otherwise it returns nullptr
 static inline char* getOption(char **begin, char **end, const std::string &option) {
     char **itr = std::find(begin, end, option);
     if (itr != end && ++itr != end) return *itr;
@@ -297,5 +299,74 @@ static inline bool walkDir(const char dname[], const bool comp) {
     return !error;
 }
 
+// 'dname' is a directory; traverse it and call doWork() for each file
+// returns false in case of error
+static inline bool walkDirPar(const char dname[], const bool comp) {
+	if (chdir(dname) == -1) {
+		if (QUITE_MODE>=1) {
+			perror("chdir");
+			std::fprintf(stderr, "Error: chdir %s\n", dname);
+		}
+		return false;
+    }
+    DIR *dir;	
+    if ((dir=opendir(".")) == NULL) {
+		if (QUITE_MODE>=1) {
+			perror("opendir");
+			std::fprintf(stderr, "Error: opendir %s\n", dname);
+		}
+		return false;
+    }
+    struct dirent *file;
+    bool error=false;
+    while((errno=0, file =readdir(dir)) != NULL) {
+		struct stat statbuf;
+		if (stat(file->d_name, &statbuf)==-1) {
+			if (QUITE_MODE>=1) {		
+				perror("stat");
+				std::fprintf(stderr, "Error: stat %s\n", file->d_name);
+			}
+			return false;
+		}
+		if(S_ISDIR(statbuf.st_mode)) {
+			if ( !isdot(file->d_name) ) {				
+				if (walkDir(file->d_name, comp)) {
+					if (chdir("..") == -1) {
+						perror("chdir");
+						std::fprintf(stderr, "Error: chdir ..\n");
+						error = true;
+					}
+				}
+				else error  = true;
+			}
+		} else {
+			if (discardIt(file->d_name, comp)) {
+				if (QUITE_MODE>=2){
+					if (comp) {
+						std::fprintf(stderr, "%s has already a %s suffix -- ignored\n", file->d_name, SUFFIX);
+					} else {
+						std::fprintf(stderr, "%s does not have a %s suffix -- ignored\n", file->d_name, SUFFIX);
+					}
+				}
+				continue;									
+			}
+			char* name_copy = strdup(file->d_name);
+			size_t size = statbuf.st_size;
+			#pragma omp task shared(error)	
+			{
+				if (!doWork(name_copy, size, comp)){
+					#pragma omp critical
+					error = true;
+				}
+			}
+		}
+    }
+    if (errno != 0) {
+		if (QUITE_MODE>=1) perror("readdir");
+		error=true;
+    }
+    closedir(dir);
+    return !error;
+}
 
 #endif  // _UTILITY_HPP

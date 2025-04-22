@@ -1,25 +1,27 @@
 CXX		= g++ -std=c++20
 INCLUDES	= -I . -I miniz
-CXXFLAGS  	+= -Wall 
+CXXFLAGS  	+= -Wall
 
-LDFLAGS 	= #-pthread -fopenmp
+LDFLAGS 	= -pthread -fopenmp
 OPTFLAGS	= -O3 -ffast-math -DNDEBUG
 
-TARGETS		= minizseq
+TARGETS		= minizseq minizpar
 
 .PHONY: all clean cleanall
 .SUFFIXES: .cpp 
 
 
 %: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@ $< ./miniz/miniz.c $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@.a $< ./miniz/miniz.c $(LDFLAGS)
 
 all		: $(TARGETS)
 
 minizseq	: minizseq.cpp cmdline.hpp utility.hpp
 
+minizseqpar	: minizpar.cpp cmdline.hpp utility.hpp
+
 clean		: 
-	rm -f $(TARGETS) 
+	rm -f *.a 
 cleanall	: clean
 	\rm -f *.o *~
 
