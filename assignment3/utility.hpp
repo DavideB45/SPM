@@ -332,14 +332,12 @@ static inline void walkDirPar(const char dname[], const bool comp, std::atomic<b
 		}
 		if(S_ISDIR(statbuf.st_mode)) {
 			if ( !isdot(file->d_name) ) {				
-				if (walkDir(file->d_name, comp)) {
-					if (chdir("..") == -1) {
-						perror("chdir");
-						std::fprintf(stderr, "Error: chdir ..\n");
-						error.store(true, std::memory_order_relaxed);
-					}
+				walkDirPar(file->d_name, comp, error);
+				if (chdir("..") == -1) {
+					perror("chdir");
+					std::fprintf(stderr, "Error: chdir ..\n");
+					error.store(true, std::memory_order_relaxed);
 				}
-				else error.store(true, std::memory_order_relaxed);
 			}
 		} else {
 			char *name_cp = strdup(file->d_name); 
