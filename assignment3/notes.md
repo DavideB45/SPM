@@ -6,3 +6,9 @@
 [Source](https://github.com/madler/pigz/blob/master/pigz.c), line 282 the explanation of how this thing works
 
 [Deflate](https://zlib.net/feldspar.html). almeno per saere cosa stiamo facendo
+
+# Stuff in general
+
+tied untied nella generazione dei task non sembra fare differenza, ma s un thread dovesse morire meglio averlo untied
+
+provando varie posizioni per creare i file nella cosetta ricorsiva ho visto che il migliore e' metterlo sono al momento in cui fai il task al 100%

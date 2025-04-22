@@ -17,6 +17,7 @@
 #include <config.hpp>
 #include <cmdline.hpp>
 #include <utility.hpp>
+#include <atomic>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -27,21 +28,29 @@ int main(int argc, char *argv[]) {
     long start=parseCommandLine(argc, argv);
     if (start<0) return -1;
 
-    bool success = true;
+    std::atomic<bool> success(true);
     #pragma omp parallel num_threads(6)
     {
-    #pragma omp single nowait
+    #pragma omp single
+    {
+    # pragma omp task shared(success)
+    {
     while(argv[start]) {
         size_t filesize=0;
         if (isDirectory(argv[start], filesize)) {
-            success &= walkDirPar(argv[start],COMP);
+            walkDirPar(argv[start], COMP, success);
         } else {
             #pragma omp task
-            success &= doWork(argv[start], filesize,COMP);
+            {
+                bool local_success = doWork(argv[start], filesize, COMP);
+                success.store(success.load() & local_success, std::memory_order_relaxed);
+            }
         }
         start++;
     }
-    }
+    }// end of task
+    }// end of single
+    }// end of parallel region
     if (!success) {
         printf("Exiting with (some) Error(s)\n");
         return -1;

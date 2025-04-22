@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <atomic>
 
 #include<config.hpp>
 
@@ -301,13 +302,14 @@ static inline bool walkDir(const char dname[], const bool comp) {
 
 // 'dname' is a directory; traverse it and call doWork() for each file
 // returns false in case of error
-static inline bool walkDirPar(const char dname[], const bool comp) {
+static inline void walkDirPar(const char dname[], const bool comp, std::atomic<bool> &error) {
 	if (chdir(dname) == -1) {
 		if (QUITE_MODE>=1) {
 			perror("chdir");
 			std::fprintf(stderr, "Error: chdir %s\n", dname);
 		}
-		return false;
+		error.store(true, std::memory_order_relaxed);
+		return;
     }
     DIR *dir;	
     if ((dir=opendir(".")) == NULL) {
@@ -315,10 +317,10 @@ static inline bool walkDirPar(const char dname[], const bool comp) {
 			perror("opendir");
 			std::fprintf(stderr, "Error: opendir %s\n", dname);
 		}
-		return false;
+		error.store(true, std::memory_order_relaxed);
+		return;
     }
     struct dirent *file;
-    bool error=false;
     while((errno=0, file =readdir(dir)) != NULL) {
 		struct stat statbuf;
 		if (stat(file->d_name, &statbuf)==-1) {
@@ -326,7 +328,7 @@ static inline bool walkDirPar(const char dname[], const bool comp) {
 				perror("stat");
 				std::fprintf(stderr, "Error: stat %s\n", file->d_name);
 			}
-			return false;
+			error.store(true, std::memory_order_relaxed);
 		}
 		if(S_ISDIR(statbuf.st_mode)) {
 			if ( !isdot(file->d_name) ) {				
@@ -334,39 +336,33 @@ static inline bool walkDirPar(const char dname[], const bool comp) {
 					if (chdir("..") == -1) {
 						perror("chdir");
 						std::fprintf(stderr, "Error: chdir ..\n");
-						error = true;
+						error.store(true, std::memory_order_relaxed);
 					}
 				}
-				else error  = true;
+				else error.store(true, std::memory_order_relaxed);
 			}
 		} else {
-			if (discardIt(file->d_name, comp)) {
+			char *name_cp = strdup(file->d_name); 
+			if (discardIt(name_cp, comp)) {
 				if (QUITE_MODE>=2){
 					if (comp) {
-						std::fprintf(stderr, "%s has already a %s suffix -- ignored\n", file->d_name, SUFFIX);
+						std::fprintf(stderr, "%s has already a %s suffix -- ignored\n", name_cp, SUFFIX);
 					} else {
-						std::fprintf(stderr, "%s does not have a %s suffix -- ignored\n", file->d_name, SUFFIX);
+						std::fprintf(stderr, "%s does not have a %s suffix -- ignored\n", name_cp, SUFFIX);
 					}
-				}
-				continue;									
+				}							
 			}
-			char* name_copy = strdup(file->d_name);
-			size_t size = statbuf.st_size;
-			#pragma omp task shared(error)	
-			{
-				if (!doWork(name_copy, size, comp)){
-					#pragma omp critical
-					error = true;
-				}
+			else{
+				#pragma omp task shared(error)
+				if (!doWork(name_cp, statbuf.st_size, comp)) error.store(true, std::memory_order_relaxed);
 			}
 		}
-    }
+	}
     if (errno != 0) {
 		if (QUITE_MODE>=1) perror("readdir");
-		error=true;
+		error.store(true, std::memory_order_relaxed);
     }
     closedir(dir);
-    return !error;
 }
 
 #endif  // _UTILITY_HPP
