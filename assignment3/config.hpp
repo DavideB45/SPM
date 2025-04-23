@@ -12,6 +12,7 @@ static bool COMP          = true;                 // by default, it compresses
 static bool REMOVE_ORIGIN = false;                // Does it keep the origin file?
 static int  QUITE_MODE    = 1; 					  // 0 silent, 1 error messages, 2 verbose
 static bool RECUR         = false;                // do we have to process the contents of subdirs?
+static int  NUM_THREADS   = 1;                     // number of threads to use
 
 
 #endif // _CONFIG_HPP

@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     if (start<0) return -1;
 
     std::atomic<bool> success(true);
-    #pragma omp parallel num_threads(6)
+    #pragma omp parallel num_threads(NUM_THREADS)
     {
     #pragma omp single
     {
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         if (isDirectory(argv[start], filesize)) {
             walkDirPar(argv[start], COMP, success);
         } else {
-            #pragma omp task
+            #pragma omp task shared(success)
             {
                 bool local_success = doWork(argv[start], filesize, COMP);
                 success.store(success.load() & local_success, std::memory_order_relaxed);
