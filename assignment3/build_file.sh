@@ -1,14 +1,20 @@
 #!/bin/bash
 
 # Script to create a bunch of files for assignment 3
-# Usage: ./build_file.sh create [-n nfiles] to create files
+# Usage: ./build_file.sh create -s [b|s|a] [-n nfiles] to create files
 # Usage: ./build_file.sh clean to remove files and directories
+# -s: size of files
+# -n: number of files to create
+# -b: big files (3-50 MB)
+# -s: small files (100-700 KB)
+# -a: all files (both big and small)
 
 # Set variables
 DIR="files"
 NUM_FILES=100
 FILE_PREFIX="file_"
 FILE_SUFFIX=".dat"
+SIZE="small" # Default size is small
 
 # Function to create files
 create_files() {
@@ -17,8 +23,13 @@ create_files() {
 
     # Create files with a specific pattern
     for ((i=1; i<=NUM_FILES; i++)); do
-        RANDOM_NUMBER=$((RANDOM % 600 + 100)) # Generate a random number between 100 and 700
-        dd if=/dev/urandom of="$DIR/$FILE_PREFIX$i$FILE_SUFFIX" bs=1K count="$RANDOM_NUMBER" 2>/dev/null
+        if [ "$SIZE" == "small" ]; then
+            RANDOM_NUMBER=$((RANDOM % 600 + 100)) # Generate a random number between 100 and 700
+            dd if=/dev/urandom of="$DIR/$FILE_PREFIX$i$FILE_SUFFIX" bs=1K count="$RANDOM_NUMBER" 2>/dev/null
+        elif [ "$SIZE" == "big" ]; then
+            RANDOM_NUMBER=$((RANDOM % 47 + 5)) # Generate a random number between 5 and 52
+            dd if=/dev/urandom of="$DIR/$FILE_PREFIX$i$FILE_SUFFIX" bs=1M count="$RANDOM_NUMBER" 2>/dev/null
+        fi
     done
 
     echo "Created $NUM_FILES files in the $DIR directory."
@@ -31,24 +42,31 @@ clean_files() {
     echo "Cleaned up files in the $DIR directory."
 }
 
-# Check command line arguments
-if [ "$#" -eq 0 ]; then
-    echo "Usage: $0 [create|clean]"
-    exit 1
-fi
-
-# Check for optional number of files
-if [ "$1" == "create" ] && [ "$2" == "-n" ]; then
-    if [[ "$3" =~ ^[0-9]+$ ]]; then
-        NUM_FILES="$3"
-    else
-        echo "Invalid number of files. Using default: $NUM_FILES"
-    fi
-fi
-
 # Process command line arguments
 case "$1" in
     create)
+        if [ "$2" == "-n" ] && [ "$4" == "-s" ]; then
+            NUM_FILES="$3"
+            SIZE="$5"
+        elif [ "$2" == "-s" ] && [ "$4" == "-n" ]; then
+            SIZE="$3"
+            NUM_FILES="$5"
+        else
+            echo "Invalid option or order. Use '-n' for number of files and '-s' for size."
+            echo "Received: $2 $4"
+            exit 1
+        fi
+        if [ "$SIZE" == "b" ]; then
+            SIZE="big"
+        elif [ "$SIZE" == "s" ]; then
+            SIZE="small"
+        elif [ "$SIZE" == "a" ]; then
+            SIZE="all"
+        else
+            echo "Invalid size option. Use 'b' for big, 's' for small, or 'a' for all."
+            echo "Received: $SIZE"
+            exit 1
+        fi
         create_files
         ;;
     clean)
@@ -56,6 +74,7 @@ case "$1" in
         ;;
     *)
         echo "Invalid option. Use 'create' to create files or 'clean' to remove them."
+        echo "Received: $1"
         exit 1
         ;;
 esac

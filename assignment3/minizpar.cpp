@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
         } else {
             #pragma omp task shared(success)
             {
-                bool local_success = doWork(argv[start], filesize, COMP);
+                bool local_success = doWorkPar(argv[start], filesize, COMP);
                 success.store(success.load() & local_success, std::memory_order_relaxed);
             }
         }

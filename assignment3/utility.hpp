@@ -300,6 +300,111 @@ static inline bool walkDir(const char dname[], const bool comp) {
     return !error;
 }
 
+/* Here some functions have been slightly changed to enable usage of OpenMP
+ * parallelism. The funcitons are much similar to before, the one that changed
+ * the most is compressDataPar, that is been modified to handle big files by
+ * splitting the data into chunks of size BLOCK_SIZE.
+*/
+
+// it compresses the data pointed by 'ptr' and having size 'size'
+// fname stores the file name of the file containing the data pointed by 'ptr'
+// return true if okay, false in case of errors
+static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::string &fname) {
+	if(BLOCK_SIZE < size){
+		size_t          inSize = size;
+		// decide hpw many blocks to use
+		size_t nblocks = size / BLOCK_SIZE;
+		std::atomic<bool> error(false);
+		// allocate array of pointers to store the compressed blocks
+		unsigned char* *ptrOut = new unsigned char* [nblocks];
+		size_t* cmp_len = new size_t[nblocks];
+		// forse posso creare task anche qui' e poi lasciare un thread alla fine che ripiglia le cose
+		#pragma omp parallel for num_threads(NUM_THREADS)
+		for(size_t b = 0; b < nblocks; b++){
+			// get the size of the block
+			size_t blockSize = BLOCK_SIZE;
+			if (b == nblocks - 1) {
+				blockSize = size - b * BLOCK_SIZE;
+			}
+			unsigned char * inPtr  = ptr + b * BLOCK_SIZE;
+			// get an estimation of the maximum compression size
+			cmp_len[b] = compressBound(blockSize);
+			// allocate memory to store compressed data in memory
+			ptrOut[b] = new unsigned char[cmp_len[b]];
+			// compress the data
+			if (compress(ptrOut[b], &(cmp_len[b]), (const unsigned char *)inPtr, blockSize) != Z_OK) {
+				if (QUITE_MODE>=1) 
+					std::fprintf(stderr, "Failed to compress file in memory\n");    
+				error.store(true, std::memory_order_relaxed);
+			}
+		}
+		if(error.load(std::memory_order_relaxed)){
+			if (QUITE_MODE>=1) 
+				std::fprintf(stderr, "Failed to compress file in memory\n");    
+			// free the allocated memory
+			for (size_t b = 0; b < nblocks; b++) {
+				delete[] ptrOut[b];
+			}
+			delete[] ptrOut;
+			delete[] cmp_len;
+			return false;
+		}
+		std::string outfile = fname + ".b" + SUFFIX;
+		std::ofstream outFile(outfile, std::ios::binary);
+		if (!outFile.is_open()) {
+			std::fprintf(stderr, "Failed to open output file: %s\n", outfile.c_str());
+			// free the allocated memory
+			for (size_t b = 0; b < nblocks; b++) {
+				delete[] ptrOut[b];
+			}
+			delete[] ptrOut;
+			delete[] cmp_len;
+			return false;
+		}
+	
+		// Write first the original file size (not really needed, but simplify decompression)
+		outFile.write(reinterpret_cast<const char*>(&inSize), sizeof(inSize));	
+		// Write the compressed data
+		for (size_t b = 0; b < nblocks; b++) {
+			// Write the size of the compressed block
+			outFile.write(reinterpret_cast<const char*>(&cmp_len[b]), sizeof(cmp_len[b]));
+			// Write the compressed data
+			outFile.write(reinterpret_cast<const char*>(ptrOut[b]), cmp_len[b]);
+			// free the allocated memory
+			delete[] ptrOut[b];
+		}
+
+		// clean stuff
+		if (REMOVE_ORIGIN) {
+			unlink(fname.c_str());
+		}
+		delete[] cmp_len;
+		delete[] ptrOut;
+		outFile.close();
+		return true;
+	} else {
+		// what is a reasonable block size?
+		return compressData(ptr, size, fname);
+	}
+}
+
+// entry-point for compression and decompression 
+// returns false in case of error
+static inline bool doWorkPar(const char fname[], size_t size, const bool comp) {
+    unsigned char *ptr = nullptr;
+    if (!mapFile(fname, size, ptr)) {
+		if (QUITE_MODE>=1) 
+			std::fprintf(stderr, "mapFile %s failed\n", fname);
+		return false;
+	}
+	bool r = (comp) ?
+		compressDataPar(ptr, size, fname) :
+		decompressData(ptr, size, fname); //TODO: decompressDataPar
+
+    unmapFile(ptr, size);
+	return r;
+}
+
 // 'dname' is a directory; traverse it and call doWork() for each file
 // returns false in case of error
 static inline void walkDirPar(const char dname[], const bool comp, std::atomic<bool> &error) {
@@ -352,7 +457,7 @@ static inline void walkDirPar(const char dname[], const bool comp, std::atomic<b
 			}
 			else{
 				#pragma omp task shared(error)
-				if (!doWork(name_cp, statbuf.st_size, comp)) error.store(true, std::memory_order_relaxed);
+				if (!doWorkPar(name_cp, statbuf.st_size, comp)) error.store(true, std::memory_order_relaxed);
 			}
 		}
 	}
