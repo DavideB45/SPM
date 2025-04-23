@@ -27,7 +27,7 @@ provando varie posizioni per creare i file nella cosetta ricorsiva ho visto che 
 # TODO:
 - [x] implement flag to change num thread
 - [x] distinguere file grossi da piccoli quando sono compressi (usare il primo valore letto)
-- [] mettere nel sequenziale la cosa a blocchi (basta a questo punto copiare la compressione senza pragma)
+- [x] mettere nel sequenziale la cosa a blocchi (basta a questo punto copiare la compressione senza pragma)
 - [x] vedere se effettivamente un file compresso e decompresso rimane uguale
 - [] gestire la r di ricorsione (cioe' diattivarla se va disattivata)
 - [x] gestire la D e la C se vogliamo rimuovere (era gia' nel codice del prof)
