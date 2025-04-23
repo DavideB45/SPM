@@ -311,6 +311,8 @@ static inline bool walkDir(const char dname[], const bool comp) {
 // return true if okay, false in case of errors
 static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::string &fname) {
 	if(BLOCK_SIZE < size){
+		#pragma omp task shared(ptr) untied
+		{
 		size_t          inSize = size;
 		// decide hpw many blocks to use
 		size_t nblocks = size / BLOCK_SIZE;
@@ -385,6 +387,7 @@ static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::s
 		delete[] cmp_len;
 		delete[] ptrOut;
 		outFile.close();
+		}// end of task
 		return true;
 	} else {
 		// what is a reasonable block size?
