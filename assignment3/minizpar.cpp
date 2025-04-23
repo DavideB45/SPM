@@ -13,6 +13,8 @@
 /* Author: Massimo Torquati <massimo.torquati@unipi.it>
  * This code is a mix of POSIX C code and some C++ library call.
  */
+/* Author of the parallelizzation: Davide Borghini
+*/
 
 #include <config.hpp>
 #include <cmdline.hpp>

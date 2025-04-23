@@ -207,7 +207,7 @@ static inline bool decompressData(unsigned char *ptr, size_t size, const std::st
 	// decompress the data 	
     if (uncompress(decompressed_data, &decompressedSize, ptr, size) != Z_OK) {
 		if (QUITE_MODE>=1) 
-			std::fprintf(stderr, "uncompress failed!\n");
+			std::fprintf(stderr, "uncompress seq failed!\n");
 		unmapFile(decompressed_data, decompressedSize);
         return false;
     }
@@ -392,6 +392,54 @@ static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::s
 	}
 }
 
+// it decompresses the data pointed by 'ptr' and having size 'size'
+// fname stores the file name of the file containing the data pointed by 'ptr'
+// return true if okay, false in case of errors
+static inline bool decompressDataPar(unsigned char *ptr, size_t size, const std::string &fname) {
+    size_t decompressedSize= reinterpret_cast<size_t*>(ptr)[0];  // read the original size
+	if(decompressedSize < BLOCK_SIZE)
+		return decompressData(ptr, size, fname);
+	
+	ptr += sizeof(size_t); // advance the pointer
+
+    // Write the decompressed data to a file
+	unsigned char *decompressed_data=nullptr;
+    std::string outfile = fname.substr(0, fname.size() - 4);  // remove the SUFFIX (i.e., .zip)
+
+	// allocate the space in a file for the uncompressed data. The file is memory mapped.
+	if (!allocateFile(outfile.c_str(), decompressedSize, decompressed_data)) return false;
+	// decompress the data 	
+	size_t nblocks = decompressedSize / BLOCK_SIZE;
+	size_t offset = 0;
+
+	for (size_t b = 0; b < nblocks; b++) {
+		size_t blockSize = BLOCK_SIZE;
+		if (b == nblocks - 1) {
+			blockSize = decompressedSize - b * BLOCK_SIZE;
+		}
+		size_t cmp_len = reinterpret_cast<size_t*>(ptr)[0];  // read the compressed size of the block
+		ptr += sizeof(size_t); // advance the pointer
+		// decompress the data
+		if (uncompress(decompressed_data + offset, &blockSize, ptr, cmp_len) != Z_OK) {
+			if (QUITE_MODE>=1) 
+				std::fprintf(stderr, "uncompress parallel failed!\n");
+			std::fprintf(stderr, "Error decompressing block %zu\n", b);
+			unmapFile(decompressed_data, decompressedSize);
+			return false;
+		}
+		offset += blockSize;
+		ptr += cmp_len;	
+	}
+	// write the data into the disk
+    unmapFile(decompressed_data, decompressedSize);
+	
+    if (REMOVE_ORIGIN) {
+        unlink(fname.c_str());
+    }
+
+    return true;
+}
+
 // entry-point for compression and decompression 
 // returns false in case of error
 static inline bool doWorkPar(const char fname[], size_t size, const bool comp) {
@@ -403,7 +451,7 @@ static inline bool doWorkPar(const char fname[], size_t size, const bool comp) {
 	}
 	bool r = (comp) ?
 		compressDataPar(ptr, size, fname) :
-		decompressData(ptr, size, fname); //TODO: decompressDataPar
+		decompressDataPar(ptr, size, fname);
 
     unmapFile(ptr, size);
 	return r;
