@@ -16,6 +16,8 @@ se abbiamo un solo file grosso le tecniche implementate per file piccoli sono 10
 come disinguere i file quando vogliamo decomprimerli?
 beh possiamo usare bzip che sta per big zip
 
+# sequenziale
+poche modifiche
 # Stuff in general
 
 tied untied nella generazione dei task non sembra fare differenza, ma s un thread dovesse morire meglio averlo untied
@@ -24,10 +26,12 @@ provando varie posizioni per creare i file nella cosetta ricorsiva ho visto che 
 
 # TODO:
 - [x] implement flag to change num thread
-- [] distinguere file grossi da piccoli quando sono compressi (usare bzip e zip)
-- [] vedere se effettivamente un file compresso e decompresso rimane uguale
+- [x] distinguere file grossi da piccoli quando sono compressi (usare il primo valore letto)
+- [] mettere nel sequenziale la cosa a blocchi (basta a questo punto copiare la compressione senza pragma)
+- [x] vedere se effettivamente un file compresso e decompresso rimane uguale
 - [] gestire la r di ricorsione (cioe' diattivarla se va disattivata)
-- [] gestire file grossi da spezzettare
+- [x] gestire la D e la C se vogliamo rimuovere (era gia' nel codice del prof)
+- [x] gestire file grossi da spezzettare
 - [] definire benchmark
 - [] fare misurazioni con numero di thread progressivo
 - [] fare il report
@@ -45,6 +49,6 @@ Questo ha senso solo se abbiamo thanti piccoli file, per migliorare la gestione 
 provare a pinnare i thread ma faere piu' test
 
 gestire in modo migliore la compresisone di file grossi nel senso che il parallel for funzionera' solo per file singoli perche' non c'e' tempo
-richiederebbe una nuova analisi intera, quindi e' fatto solo per i file piccoli
-
-provare a non usare sottogruppi di thread, perche' oversubscribe i processori e quindi a volte non va bene, (vale solo se i task sono gestiti in quel modo)
+richiederebbe una nuova analisi intera, quindi e' fatto solo per i file piccoli,
+inoltre bisognerebbe creare un sacco di task, e quindi il porcesso non e' del tutto immediato,
+una soluzione che potrebbe essere una via di mezzo e' gestire in coda i file grossi nello stesso modo in cui sono gestiti ora

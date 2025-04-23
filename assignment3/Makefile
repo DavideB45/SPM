@@ -14,9 +14,10 @@ TARGETS		= minizseq minizpar
 %: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@.a $< ./miniz/miniz.c $(LDFLAGS)
 
-all		: $(TARGETS)
+minizseq: minizseq.cpp cmdline.hpp utility.hpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(OPTFLAGS) -o $@.a $< ./miniz/miniz.c
 
-minizseq	: minizseq.cpp cmdline.hpp utility.hpp
+all		: $(TARGETS)
 
 minizseqpar	: minizpar.cpp cmdline.hpp utility.hpp
 
@@ -24,6 +25,3 @@ clean		:
 	rm -f *.a 
 cleanall	: clean
 	\rm -f *.o *~
-
-
-

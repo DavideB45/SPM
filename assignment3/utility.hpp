@@ -207,7 +207,7 @@ static inline bool decompressData(unsigned char *ptr, size_t size, const std::st
 	// decompress the data 	
     if (uncompress(decompressed_data, &decompressedSize, ptr, size) != Z_OK) {
 		if (QUITE_MODE>=1) 
-			std::fprintf(stderr, "uncompress seq failed!\n");
+			std::fprintf(stderr, "uncompress failed!\n");
 		unmapFile(decompressed_data, decompressedSize);
         return false;
     }
@@ -221,95 +221,17 @@ static inline bool decompressData(unsigned char *ptr, size_t size, const std::st
     return true;
 }
 
-// entry-point for compression and decompression 
-// returns false in case of error
-static inline bool doWork(const char fname[], size_t size, const bool comp) {
-    unsigned char *ptr = nullptr;
-    if (!mapFile(fname, size, ptr)) {
-		if (QUITE_MODE>=1) 
-			std::fprintf(stderr, "mapFile %s failed\n", fname);
-		return false;
-	}
-	bool r = (comp) ?
-		compressData(ptr, size, fname) :
-		decompressData(ptr, size, fname);
-
-    unmapFile(ptr, size);
-	return r;
-}
-
-// 'dname' is a directory; traverse it and call doWork() for each file
-// returns false in case of error
-static inline bool walkDir(const char dname[], const bool comp) {
-	if (chdir(dname) == -1) {
-		if (QUITE_MODE>=1) {
-			perror("chdir");
-			std::fprintf(stderr, "Error: chdir %s\n", dname);
-		}
-		return false;
-    }
-    DIR *dir;	
-    if ((dir=opendir(".")) == NULL) {
-		if (QUITE_MODE>=1) {
-			perror("opendir");
-			std::fprintf(stderr, "Error: opendir %s\n", dname);
-		}
-		return false;
-    }
-    struct dirent *file;
-    bool error=false;
-    while((errno=0, file =readdir(dir)) != NULL) {
-		struct stat statbuf;
-		if (stat(file->d_name, &statbuf)==-1) {
-			if (QUITE_MODE>=1) {		
-				perror("stat");
-				std::fprintf(stderr, "Error: stat %s\n", file->d_name);
-			}
-			return false;
-		}
-		if(S_ISDIR(statbuf.st_mode)) {
-			if ( !isdot(file->d_name) ) {				
-				if (walkDir(file->d_name, comp)) {
-					if (chdir("..") == -1) {
-						perror("chdir");
-						std::fprintf(stderr, "Error: chdir ..\n");
-						error = true;
-					}
-				}
-				else error  = true;
-			}
-		} else {
-			if (discardIt(file->d_name, comp)) {
-				if (QUITE_MODE>=2){
-					if (comp) {
-						std::fprintf(stderr, "%s has already a %s suffix -- ignored\n", file->d_name, SUFFIX);
-					} else {
-						std::fprintf(stderr, "%s does not have a %s suffix -- ignored\n", file->d_name, SUFFIX);
-					}
-				}
-				continue;									
-			}
-			if (!doWork(file->d_name, statbuf.st_size, comp)) error = true;
-		}
-    }
-    if (errno != 0) {
-		if (QUITE_MODE>=1) perror("readdir");
-		error=true;
-    }
-    closedir(dir);
-    return !error;
-}
 
 /* Here some functions have been slightly changed to enable usage of OpenMP
  * parallelism. The funcitons are much similar to before, the one that changed
- * the most is compressDataPar, that is been modified to handle big files by
+ * the most is compressDataBlocked, that is been modified to handle big files by
  * splitting the data into chunks of size BLOCK_SIZE.
 */
 
 // it compresses the data pointed by 'ptr' and having size 'size'
 // fname stores the file name of the file containing the data pointed by 'ptr'
 // return true if okay, false in case of errors
-static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::string &fname) {
+static inline bool compressDataBlocked(unsigned char *ptr, size_t size, const std::string &fname) {
 	if(BLOCK_SIZE < size){
 		size_t          inSize = size;
 		// decide hpw many blocks to use
@@ -395,7 +317,7 @@ static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::s
 // it decompresses the data pointed by 'ptr' and having size 'size'
 // fname stores the file name of the file containing the data pointed by 'ptr'
 // return true if okay, false in case of errors
-static inline bool decompressDataPar(unsigned char *ptr, size_t size, const std::string &fname) {
+static inline bool decompressDataBlocked(unsigned char *ptr, size_t size, const std::string &fname) {
     size_t decompressedSize= reinterpret_cast<size_t*>(ptr)[0];  // read the original size
 	if(decompressedSize < BLOCK_SIZE)
 		return decompressData(ptr, size, fname);
@@ -442,7 +364,7 @@ static inline bool decompressDataPar(unsigned char *ptr, size_t size, const std:
 
 // entry-point for compression and decompression 
 // returns false in case of error
-static inline bool doWorkPar(const char fname[], size_t size, const bool comp) {
+static inline bool doWork(const char fname[], size_t size, const bool comp) {
     unsigned char *ptr = nullptr;
     if (!mapFile(fname, size, ptr)) {
 		if (QUITE_MODE>=1) 
@@ -450,11 +372,73 @@ static inline bool doWorkPar(const char fname[], size_t size, const bool comp) {
 		return false;
 	}
 	bool r = (comp) ?
-		compressDataPar(ptr, size, fname) :
-		decompressDataPar(ptr, size, fname);
+		compressDataBlocked(ptr, size, fname) :
+		decompressDataBlocked(ptr, size, fname);
 
     unmapFile(ptr, size);
 	return r;
+}
+
+// 'dname' is a directory; traverse it and call doWork() for each file
+// returns false in case of error
+static inline bool walkDir(const char dname[], const bool comp) {
+	if (chdir(dname) == -1) {
+		if (QUITE_MODE>=1) {
+			perror("chdir");
+			std::fprintf(stderr, "Error: chdir %s\n", dname);
+		}
+		return false;
+    }
+    DIR *dir;	
+    if ((dir=opendir(".")) == NULL) {
+		if (QUITE_MODE>=1) {
+			perror("opendir");
+			std::fprintf(stderr, "Error: opendir %s\n", dname);
+		}
+		return false;
+    }
+    struct dirent *file;
+    bool error=false;
+    while((errno=0, file =readdir(dir)) != NULL) {
+		struct stat statbuf;
+		if (stat(file->d_name, &statbuf)==-1) {
+			if (QUITE_MODE>=1) {		
+				perror("stat");
+				std::fprintf(stderr, "Error: stat %s\n", file->d_name);
+			}
+			return false;
+		}
+		if(S_ISDIR(statbuf.st_mode)) {
+			if ( !isdot(file->d_name) ) {				
+				if (walkDir(file->d_name, comp)) {
+					if (chdir("..") == -1) {
+						perror("chdir");
+						std::fprintf(stderr, "Error: chdir ..\n");
+						error = true;
+					}
+				}
+				else error  = true;
+			}
+		} else {
+			if (discardIt(file->d_name, comp)) {
+				if (QUITE_MODE>=2){
+					if (comp) {
+						std::fprintf(stderr, "%s has already a %s suffix -- ignored\n", file->d_name, SUFFIX);
+					} else {
+						std::fprintf(stderr, "%s does not have a %s suffix -- ignored\n", file->d_name, SUFFIX);
+					}
+				}
+				continue;									
+			}
+			if (!doWork(file->d_name, statbuf.st_size, comp)) error = true;
+		}
+    }
+    if (errno != 0) {
+		if (QUITE_MODE>=1) perror("readdir");
+		error=true;
+    }
+    closedir(dir);
+    return !error;
 }
 
 // 'dname' is a directory; traverse it and call doWork() for each file
@@ -509,7 +493,7 @@ static inline void walkDirPar(const char dname[], const bool comp, std::atomic<b
 			}
 			else{
 				#pragma omp task shared(error)
-				if (!doWorkPar(name_cp, statbuf.st_size, comp)) error.store(true, std::memory_order_relaxed);
+				if (!doWork(name_cp, statbuf.st_size, comp)) error.store(true, std::memory_order_relaxed);
 			}
 		}
 	}
