@@ -27,7 +27,7 @@ create_files() {
             RANDOM_NUMBER=$((RANDOM % 600 + 100)) # Generate a random number between 100 and 700
             dd if=/dev/urandom of="$DIR/$FILE_PREFIX$i$FILE_SUFFIX" bs=1K count="$RANDOM_NUMBER" 2>/dev/null
         elif [ "$SIZE" == "big" ]; then
-            RANDOM_NUMBER=$((RANDOM % 47 + 5)) # Generate a random number between 5 and 52
+            RANDOM_NUMBER=$((RANDOM % 50 + 50)) # Generate a random number between 50 and 99
             dd if=/dev/urandom of="$DIR/$FILE_PREFIX$i$FILE_SUFFIX" bs=1M count="$RANDOM_NUMBER" 2>/dev/null
         fi
     done

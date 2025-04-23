@@ -319,25 +319,29 @@ static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::s
 		unsigned char* *ptrOut = new unsigned char* [nblocks];
 		size_t* cmp_len = new size_t[nblocks];
 		// forse posso creare task anche qui' e poi lasciare un thread alla fine che ripiglia le cose
-		#pragma omp parallel for num_threads(NUM_THREADS)
 		for(size_t b = 0; b < nblocks; b++){
-			// get the size of the block
-			size_t blockSize = BLOCK_SIZE;
-			if (b == nblocks - 1) {
-				blockSize = size - b * BLOCK_SIZE;
-			}
-			unsigned char * inPtr  = ptr + b * BLOCK_SIZE;
-			// get an estimation of the maximum compression size
-			cmp_len[b] = compressBound(blockSize);
-			// allocate memory to store compressed data in memory
-			ptrOut[b] = new unsigned char[cmp_len[b]];
-			// compress the data
-			if (compress(ptrOut[b], &(cmp_len[b]), (const unsigned char *)inPtr, blockSize) != Z_OK) {
-				if (QUITE_MODE>=1) 
-					std::fprintf(stderr, "Failed to compress file in memory\n");    
-				error.store(true, std::memory_order_relaxed);
+			#pragma omp task shared(error)
+			{
+				// get the size of the block
+				size_t blockSize = BLOCK_SIZE;
+				if (b == nblocks - 1) {
+					blockSize = size - b * BLOCK_SIZE;
+				}
+				unsigned char * inPtr  = ptr + b * BLOCK_SIZE;
+				// get an estimation of the maximum compression size
+				cmp_len[b] = compressBound(blockSize);
+				// allocate memory to store compressed data in memory
+				ptrOut[b] = new unsigned char[cmp_len[b]];
+				// compress the data
+				if (compress(ptrOut[b], &(cmp_len[b]), (const unsigned char *)inPtr, blockSize) != Z_OK) {
+					if (QUITE_MODE>=1) 
+						std::fprintf(stderr, "Failed to compress file in memory\n");    
+					error.store(true, std::memory_order_relaxed);
+				}
 			}
 		}
+		// wait for all tasks to finish
+		#pragma omp taskwait
 		if(error.load(std::memory_order_relaxed)){
 			if (QUITE_MODE>=1) 
 				std::fprintf(stderr, "Failed to compress file in memory\n");    

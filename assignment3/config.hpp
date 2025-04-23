@@ -6,14 +6,14 @@
 
 #define SUFFIX ".zip"
 constexpr int BUF_SIZE=(1024 * 1024);
-
+static const size_t MB = 1024 * 1024;
 // global variables with their default values 
 static bool COMP          = true;                 // by default, it compresses 
 static bool REMOVE_ORIGIN = false;                // Does it keep the origin file?
 static int  QUITE_MODE    = 1; 					  // 0 silent, 1 error messages, 2 verbose
 static bool RECUR         = false;                // do we have to process the contents of subdirs?
 static int  NUM_THREADS   = 1;                    // number of threads to use
-static size_t  BLOCK_SIZE = 10000000;              // size of the block to use for compression (10MB)
+static size_t  BLOCK_SIZE = 10*MB;                // size of the block to use for compression (10MB)
 
 
 #endif // _CONFIG_HPP

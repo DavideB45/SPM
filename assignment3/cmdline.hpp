@@ -17,12 +17,13 @@ static inline void usage(const char *argv0) {
     std::printf(" -D decompress: 0 preserves, 1 removes the original file (default D=%d)\n", REMOVE_ORIGIN && !COMP ? 1 : 0);
     std::printf(" -q 0 silent mode, 1 prints only error messages to stderr, 2 verbose (default q=%d)\n", QUITE_MODE);
     std::printf(" -t number of threads to use (default t=%d)\n", NUM_THREADS);
+    std::printf(" -b size of the block to use for compression in MB (default b=%zu)\n", BLOCK_SIZE/MB);
     std::printf("--------------------\n");
 }
 
 int parseCommandLine(int argc, char *argv[]) {
     extern char *optarg;
-    const std::string optstr = "r:C:D:q:t:";
+    const std::string optstr = "r:C:D:q:t:b:";
     long opt, start = 1;
     bool cpresent = false, dpresent = false;
 
@@ -80,6 +81,16 @@ int parseCommandLine(int argc, char *argv[]) {
                     return -1;
                 }
                 NUM_THREADS = n;
+                start += 2;
+            } break;
+            case 'b': {
+                long n = 0;
+                if (!isNumber(optarg, n)) {
+                    std::fprintf(stderr, "Error: wrong '-b' option\n");
+                    usage(argv[0]);
+                    return -1;
+                }
+                BLOCK_SIZE = n * MB;
                 start += 2;
             } break;
             default:
