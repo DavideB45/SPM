@@ -353,7 +353,7 @@ static inline bool compressDataPar(unsigned char *ptr, size_t size, const std::s
 			delete[] cmp_len;
 			return false;
 		}
-		std::string outfile = fname + ".b" + SUFFIX;
+		std::string outfile = fname + SUFFIX;
 		std::ofstream outFile(outfile, std::ios::binary);
 		if (!outFile.is_open()) {
 			std::fprintf(stderr, "Failed to open output file: %s\n", outfile.c_str());
