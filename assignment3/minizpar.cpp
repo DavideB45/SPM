@@ -21,6 +21,8 @@
 #include <utility.hpp>
 #include <atomic>
 
+#include <hpc_helpers.hpp>
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         usage(argv[0]);
@@ -31,6 +33,7 @@ int main(int argc, char *argv[]) {
     if (start<0) return -1;
 
     std::atomic<bool> success(true);
+    TIMERSTART(total);
     #pragma omp parallel num_threads(NUM_THREADS)
     {
     #pragma omp single
@@ -53,6 +56,7 @@ int main(int argc, char *argv[]) {
     }// end of task
     }// end of single
     }// end of parallel region
+    TIMERSTOP(total);
     if (!success) {
         printf("Exiting with (some) Error(s)\n");
         return -1;

@@ -506,7 +506,7 @@ static inline void walkDirPar(const char dname[], const bool comp, std::atomic<b
     closedir(dir);
 }
 
-bool expandDir(const char* dirName, std::vector<std::pair<char*, size_t>> &files) {
+static inline bool expandDir(const char* dirName, std::vector<std::pair<char*, size_t>> &files) {
 	DIR *dir;
 	bool error=false;
 	if (chdir(dirName) == -1) {
@@ -564,6 +564,21 @@ bool expandDir(const char* dirName, std::vector<std::pair<char*, size_t>> &files
 	}
 	closedir(dir);
 	return !error;
+}
+
+static inline bool doWorkNoBlock(const char fname[], size_t size, const bool comp) {
+    unsigned char *ptr = nullptr;
+    if (!mapFile(fname, size, ptr)) {
+		if (QUITE_MODE>=1) 
+			std::fprintf(stderr, "mapFile %s failed\n", fname);
+		return false;
+	}
+	bool r = (comp) ?
+		compressData(ptr, size, fname) :
+		decompressData(ptr, size, fname);
+
+    unmapFile(ptr, size);
+	return r;
 }
 
 #endif  // _UTILITY_HPP

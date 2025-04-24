@@ -20,6 +20,8 @@
 #include <vector>
 #include <atomic>
 
+#include <hpc_helpers.hpp>
+
 int main(int argc, char *argv[]) {
 	if (argc < 2) {
 		usage(argv[0]);
@@ -31,6 +33,7 @@ int main(int argc, char *argv[]) {
 
 	bool success = true;
 	
+	TIMERSTART(total);
 	// define all the files to process
 	std::vector<std::pair<char*, size_t>> files;
 	for (int i = start; i < argc; ++i) {
@@ -43,12 +46,12 @@ int main(int argc, char *argv[]) {
 			files.emplace_back(argv[i], filesize);
 		}
 	}
-
 	# pragma omp parallel for num_threads(NUM_THREADS) reduction(&& : success)
 	for(size_t i = 0; i < files.size(); ++i) {
-		success &= doWork(files[i].first, files[i].second, COMP);
+		success &= doWorkNoBlock(files[i].first, files[i].second, COMP);
 	}
-	
+	TIMERSTOP(total);
+
 	if (!success) {
 		printf("Exiting with (some) Error(s)\n");
 		return -1;

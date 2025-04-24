@@ -33,8 +33,12 @@ prove con il parallel for
 Questo viene fatto perche' se abbiamo molti thread il bottleneck potrebbe essere lo spawnatore di task, inoltre i task sono piu' lenti dei parallel for a detta del prof, quindi questo potrebbe migliorare le performance e la parallelizzabilita'.
 Questo ha senso solo se abbiamo thanti piccoli file, per migliorare la gestione dei grossi file dobbiamo gestire le cose in modo piu' complicato, e forse a quel punto non ha senso l'utilizzo di OMP ma ha piu' senso una gestione personalizzata delle code oppure fastflow
 
+[Tabella con tempi in base a scheduling statico dinamico, 1/2 selezioni di blocchi]
+
 prove con thread pinning
 Perche' stiamo gestendo file di dimensioni rilevanti, quindi avere tutto su un singolo socket, oppure due, aumentando le risorse totali, ma anche l'overhead per accedere alla memoria. La decisione non e' ovvia e richiede test per vedere se ha senso starci a perdere tempo.
+
+[Tabella con tempi in base a posizionamento (usando i flag precucinati da OMP)]
 
 questi testo sono stai fatti per vedere cosa influiva di piu' sulle performance, e decidere quale delle due strade debba essere seguita in caso di sviluppi futuri
 

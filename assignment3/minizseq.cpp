@@ -18,6 +18,8 @@
 #include <cmdline.hpp>
 #include <utility.hpp>
 
+#include <hpc_helpers.hpp>
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         usage(argv[0]);
@@ -28,6 +30,7 @@ int main(int argc, char *argv[]) {
     if (start<0) return -1;
   
 	bool success = true;
+	TIMERSTART(total);
 	while(argv[start]) {
 		size_t filesize=0;
 		if (isDirectory(argv[start], filesize)) {
@@ -37,6 +40,7 @@ int main(int argc, char *argv[]) {
 		}
 		start++;
 	}
+	TIMERSTOP(total);
 	if (!success) {
 		printf("Exiting with (some) Error(s)\n");
 		return -1;
