@@ -56,6 +56,7 @@ questi testo sono stai fatti per vedere cosa influiva di piu' sulle performance,
 - [] fare il report
 - [x] fare prima creazione dei task poi gestione (deve semplicemente essere una lista di stringhe)
 - [x] studio un po' fatto a caso sul pinnare i thread, potrebbe migliorare i file grossi?
+- [] what about some efficiency plots?
 
 
 # Cose migliorabili che non ho fatto

@@ -11,7 +11,7 @@ OUTPUT_FILE="results/sequential_results.csv"  # Log file
 #initialize the csv file
 echo "trial,problem,time" > $OUTPUT_FILE
 
-for i in {1..5}; do 
+for i in {1..7}; do 
     # clear the folders in case there are zip files remaining
     ./scripts/build_tests.sh r 
     for problem in "${PROBLEMS[@]}"; do

@@ -13,7 +13,7 @@ OUTPUT_FILE="results/parallel_results.csv"  # Log file
 #initialize the csv file
 echo "trial,problem,threads,time" > $OUTPUT_FILE
 
-for i in {1..5}; do 
+for i in {1..7}; do 
     for thread in "${THREADS[@]}"; do
         # clear the folders in case there are zip files remaining
         ./scripts/build_tests.sh r 
