@@ -48,13 +48,14 @@ questi testo sono stai fatti per vedere cosa influiva di piu' sulle performance,
 - [x] mettere nel sequenziale la cosa a blocchi (basta a questo punto copiare la compressione senza pragma)
 - [x] vedere se effettivamente un file compresso e decompresso rimane uguale
 - [] gestire la r di ricorsione (cioe' diattivarla se va disattivata)
+- [] fixare quella cosina...
 - [x] gestire la D e la C se vogliamo rimuovere (era gia' nel codice del prof)
 - [x] gestire file grossi da spezzettare
-- [] definire benchmark
-- [] fare misurazioni con numero di thread progressivo
+- [x] definire benchmark
+- [x] fare misurazioni con numero di thread progressivo
 - [] fare il report
-- [] fare prima creazione dei task poi gestione (deve semplicemente essere una lista di stringhe)
-- [] studio un po' fatto a caso sul pinnare i thread, potrebbe migliorare i file grossi?
+- [x] fare prima creazione dei task poi gestione (deve semplicemente essere una lista di stringhe)
+- [x] studio un po' fatto a caso sul pinnare i thread, potrebbe migliorare i file grossi?
 
 
 # Cose migliorabili che non ho fatto
