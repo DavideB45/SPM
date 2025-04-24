@@ -65,3 +65,7 @@ gestire in modo migliore la compresisone di file grossi nel senso che il paralle
 inoltre bisognerebbe creare un sacco di task, e quindi il porcesso non e' del tutto immediato,
 
 una soluzione che potrebbe essere una via di mezzo e' gestire in coda i file grossi nello stesso modo in cui sono gestiti ora
+
+un'altra cosa che potrebbe toccare l'analisi e' come si compota con pochi file 
+
+la chunksize per splittare i file grossi e' stata scelta a occhio, era buona attorno a 1/2 MB

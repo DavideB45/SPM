@@ -10,7 +10,7 @@
 # -a: all files (both big and small)
 
 # Set variables
-DIR="files"
+DIR="small_files"
 NUM_FILES=100
 FILE_PREFIX="file_"
 FILE_SUFFIX=".dat"
