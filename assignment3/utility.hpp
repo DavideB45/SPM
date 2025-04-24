@@ -16,7 +16,9 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
+
 #include <atomic>
+#include <vector>
 
 #include<config.hpp>
 
@@ -409,7 +411,7 @@ static inline bool walkDir(const char dname[], const bool comp) {
 			return false;
 		}
 		if(S_ISDIR(statbuf.st_mode)) {
-			if ( !isdot(file->d_name) ) {				
+			if ( !isdot(file->d_name) && RECUR) {				
 				if (walkDir(file->d_name, comp)) {
 					if (chdir("..") == -1) {
 						perror("chdir");
@@ -472,7 +474,7 @@ static inline void walkDirPar(const char dname[], const bool comp, std::atomic<b
 			error.store(true, std::memory_order_relaxed);
 		}
 		if(S_ISDIR(statbuf.st_mode)) {
-			if ( !isdot(file->d_name) ) {				
+			if ( !isdot(file->d_name) && RECUR) {				
 				walkDirPar(file->d_name, comp, error);
 				if (chdir("..") == -1) {
 					perror("chdir");
@@ -502,6 +504,66 @@ static inline void walkDirPar(const char dname[], const bool comp, std::atomic<b
 		error.store(true, std::memory_order_relaxed);
     }
     closedir(dir);
+}
+
+bool expandDir(const char* dirName, std::vector<std::pair<char*, size_t>> &files) {
+	DIR *dir;
+	bool error=false;
+	if (chdir(dirName) == -1) {
+		if (QUITE_MODE>=1) {
+			perror("chdir");
+			std::fprintf(stderr, "Error: chdir %s\n", dirName);
+		}
+		return false;
+	}
+	if ((dir=opendir(".")) == NULL) {
+		if (QUITE_MODE>=1) {
+			perror("opendir");
+			std::fprintf(stderr, "Error: opendir %s\n", dirName);
+		}
+		return false;
+	}
+	struct dirent *file;
+	while((errno=0, file =readdir(dir)) != NULL) {
+		struct stat statbuf;
+		if (stat(file->d_name, &statbuf)==-1) {
+			if (QUITE_MODE>=1) {		
+				perror("stat");
+				std::fprintf(stderr, "Error: stat %s\n", file->d_name);
+			}
+			error=true;
+			continue;
+		}
+		if(S_ISDIR(statbuf.st_mode)) {
+			if ( !isdot(file->d_name) && RECUR) {				
+				char newDir[PATH_MAX];
+				snprintf(newDir, sizeof(newDir), "%s/%s", dirName, file->d_name);
+				error &= expandDir(newDir, files);
+				if (chdir("..") == -1) {
+					perror("chdir");
+					std::fprintf(stderr, "Error: chdir ..\n");
+					error = true;
+				}
+			}
+		} else {
+			if (discardIt(file->d_name, COMP)) {
+				if (QUITE_MODE>=2){
+					if (COMP) {
+						std::fprintf(stderr, "%s has already a %s suffix -- ignored\n", file->d_name, SUFFIX);
+					} else {
+						std::fprintf(stderr, "%s does not have a %s suffix -- ignored\n", file->d_name, SUFFIX);
+					}
+				}
+				continue;									
+			}
+			files.emplace_back(strdup(file->d_name), statbuf.st_size);
+		}
+	}
+	if (errno != 0) {
+		if (QUITE_MODE>=1) perror("readdir");
+	}
+	closedir(dir);
+	return !error;
 }
 
 #endif  // _UTILITY_HPP
