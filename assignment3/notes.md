@@ -28,7 +28,16 @@ provando varie posizioni per creare i file nella cosetta ricorsiva ho visto che 
 
 per i file grossi la scelta e' di fare prima le cose e poi unirle, un'alternativa potrebbe essere usare del nested parallelism (parallel for) e fargli scrivere nel file in modo ordinato. Non e' stato fatto perche' sarebbe difficile decidere il numero di thread da utilizzare nel for e poi ci sarebbe sicuramente dell'overhead, quindi non e' immediato dire che quella soluzione sarebbe la migliore. Poi non voglio gestire il nested parallelism.
 
+# test definition
+beh definiamo dimensioni e descriviamo, poi dire come sono stati creati
+
+poi dire che fa tutto un po' ribrezzo, ma forse e' mem bound io non so che fare, sono molto triste, posso solo dire che non ha senso di usare piu' di un tot di threads
+
+se c'e' tempo mettere qui' lo plot dell'efficienza (prima capire com'e' definita l'efficienza)
+
 # furder tests
+E' chiaro che ci sia un problema...
+
 prove con il parallel for
 Questo viene fatto perche' se abbiamo molti thread il bottleneck potrebbe essere lo spawnatore di task, inoltre i task sono piu' lenti dei parallel for a detta del prof, quindi questo potrebbe migliorare le performance e la parallelizzabilita'.
 Questo ha senso solo se abbiamo thanti piccoli file, per migliorare la gestione dei grossi file dobbiamo gestire le cose in modo piu' complicato, e forse a quel punto non ha senso l'utilizzo di OMP ma ha piu' senso una gestione personalizzata delle code oppure fastflow
@@ -57,6 +66,7 @@ questi testo sono stai fatti per vedere cosa influiva di piu' sulle performance,
 - [x] fare prima creazione dei task poi gestione (deve semplicemente essere una lista di stringhe)
 - [x] studio un po' fatto a caso sul pinnare i thread, potrebbe migliorare i file grossi?
 - [] what about some efficiency plots?
+- [] single thread measurements for parallel program
 
 
 # Cose migliorabili che non ho fatto
