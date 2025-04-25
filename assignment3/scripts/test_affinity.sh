@@ -19,7 +19,7 @@ OUTPUT_FILE="results/affinity_results.csv"  # Log file
 #initialize the csv file
 echo "trial,affinity,problem,time" > $OUTPUT_FILE
 
-for i in {1..5}; do 
+for i in {1..9}; do 
     for aff in "${OMP_AFFINITY_FLAGS[@]}"; do
         # clear the folders in case there are zip files remaining
         rm small_files/*.zip

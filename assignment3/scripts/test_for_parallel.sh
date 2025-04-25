@@ -19,7 +19,7 @@ OUTPUT_FILE="results/for_parallel_results.csv"  # Log file
 #initialize the csv file
 echo "trial,scheduling,block,threads,time" > $OUTPUT_FILE
 
-for i in {1..5}; do 
+for i in {1..9}; do 
     for thread in "${THREADS[@]}"; do
         for sched in "${OMP_SCHEDULING_FLAGS[@]}"; do
             # clear the folders in case there are zip files remaining

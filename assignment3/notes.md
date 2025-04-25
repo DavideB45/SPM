@@ -44,10 +44,19 @@ Questo ha senso solo se abbiamo thanti piccoli file, per migliorare la gestione 
 
 [Tabella con tempi in base a scheduling statico dinamico, 1/2 selezioni di blocchi]
 
-prove con thread pinning
+prove con thread pinning.
+Visto che da 8 thread in poi non c'e' un grande miglioramento possiamo cercare di capitre dove metterli questi 8 thread per vederese migliora qualcosa
 Perche' stiamo gestendo file di dimensioni rilevanti, quindi avere tutto su un singolo socket, oppure due, aumentando le risorse totali, ma anche l'overhead per accedere alla memoria. La decisione non e' ovvia e richiede test per vedere se ha senso starci a perdere tempo.
 
 [Tabella con tempi in base a posizionamento (usando i flag precucinati da OMP)]
+
+| Value   | Description |
+|---------|-------------------------------------------------------------------------------------------------|
+| `true`  | Threads are bound to specific processors and won't migrate.                                     |
+| `false` | Threads are allowed to migrate between processors.                                              |
+| `master`| All threads are placed as close as possible to the thread that encountered the parallel region (usually the master thread). |
+| `close` | Threads are placed as close together as possible (e.g., filling cores within a socket before moving to another). |
+| `spread`| Threads are spread out as evenly as possible across cores/sockets. Good for reducing contention. |
 
 questi testo sono stai fatti per vedere cosa influiva di piu' sulle performance, e decidere quale delle due strade debba essere seguita in caso di sviluppi futuri
 
