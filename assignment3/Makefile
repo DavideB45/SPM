@@ -5,7 +5,7 @@ CXXFLAGS  	+= -Wall
 LDFLAGS 	= -pthread -fopenmp
 OPTFLAGS	= -O3 -ffast-math -DNDEBUG
 
-TARGETS		= minizseq minizpar minizforpar
+TARGETS		= minizseq minizpar minizforpar testWorkingAffinity
 
 .PHONY: all clean cleanall
 .SUFFIXES: .cpp 
@@ -22,6 +22,8 @@ minizseq: minizseq.cpp cmdline.hpp utility.hpp
 minizseqpar: minizpar.cpp cmdline.hpp utility.hpp
 
 minizforpar: minizforpar.cpp cmdline.hpp utility.hpp
+
+testWorkingAffinity: testWorkingAffinity.cpp cmdline.hpp utility.hpp
 
 clean		: 
 	rm -f *.a 
