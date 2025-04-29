@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 	TIMERSTOP(map_files);
 
 	TIMERSTART(duplicate)
-	#pragma omp parallel for num_threads(8)
+	//#pragma omp parallel for num_threads(8)
 	for (size_t i = 0; i < files.size(); i++) {
 		std::string originalFileName = files[i].first;
 		std::string copyFileName = originalFileName + ".zip";
