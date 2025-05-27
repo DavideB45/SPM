@@ -1,6 +1,6 @@
 CXXFLAGS            += -std=c++20
 
-OPTIMIZE_FLAGS  += -O3 -ffast-math -DNDEBUG
+OPTIMIZE_FLAGS  += -O3 -ffast-math
 
 INCS            += -I ./fastflow -I .
 CXXFLAGS            += -Wall
