@@ -32,21 +32,15 @@ struct Worker: ff_node_t<task> {
 			// Merge task
 			size_t mid = in->start_index + in->current_size;
 			
-			// Merge [in->first, mid) and [mid, merge_end)
-			Record* temp = new Record[in->end_index - in->start_index]; // Temporary array for merging
-			std::merge(
+			// Merge [in->start_index, mid) and [mid, in->end_index) in place
+			std::inplace_merge(
 				records + in->start_index, 
-				records + mid,
 				records + mid, 
 				records + in->end_index,
-				temp,
 				[](const Record& a, const Record& b) {
 					return a.key < b.key;
 				}
 			);
-			// Copy merged records back to the original array
-			std::copy(temp, temp + (in->end_index - in->start_index), records + in->start_index);
-			delete[] temp; // Free temporary array
 			return in;
 		}
 		
@@ -127,7 +121,7 @@ int main(int argc, char** argv) {
 
 	farm.remove_collector(); // No collector needed for this example
 	farm.wrap_around();
-	//farm.set_scheduling_ondemand(); // Use ondemand scheduling
+	farm.set_scheduling_ondemand(); // Use ondemand scheduling
 	
 	if (farm.run_and_wait_end() < 0) {
 		fprintf(stderr, "Error running farm\n");

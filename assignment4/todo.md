@@ -9,6 +9,7 @@
 - [ ] creare sequenziale
 - [ ] download fastflow
 - [ ] run mapping.sh
+- [ ] vedere questo thread pinning
 - [ ] create a farm
     - [ ] classica per fare solo il sort (merge in emitter)
     - [ ] migliore in cui il merge viene ridistribuito ai worker
