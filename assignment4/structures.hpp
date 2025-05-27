@@ -56,7 +56,7 @@ inline void sort_records(Record* records, size_t size) {
 
 inline void print_records(const Record* records, size_t size) {
     for (size_t i = 0; i < size; i++) {
-        printf("Key: %lu, Payload: %.*s\n", records[i].key, RECORD_PAYLOAD, records[i].rpayload);
+        printf("Key: %lu, Payload: %s\n", records[i].key , records[i].rpayload);
     }
 }
 

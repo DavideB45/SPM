@@ -15,5 +15,6 @@ int main(int argc, char** argv) {
 	sort_records(records, ARRAY_SIZE);
 	TIMERSTOP(sort_records);
 
+	//print_records(records, ARRAY_SIZE);
 	free_records(records, ARRAY_SIZE);
 }
