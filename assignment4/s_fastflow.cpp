@@ -70,6 +70,7 @@ struct Emitter: ff_monode_t<task> {
 				}
 			}
 		}
+		delete in; // delete the task we just processed
 		// check hash collision
 		// someting coming back from Workers
 		if(++count < tot_tasks) {

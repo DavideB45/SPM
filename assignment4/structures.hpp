@@ -60,4 +60,44 @@ inline void print_records(const Record* records, size_t size) {
     }
 }
 
+inline void save_records_to(const Record* records, size_t size, const char* filename) {
+    FILE* file = fopen(filename, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file for writing: %s\n", filename);
+        return;
+    }
+    for (size_t i = 0; i < size; i++) {
+        fprintf(file, "%lu,%s\n", records[i].key, records[i].rpayload);
+    }
+    fclose(file);
+}
+
+inline void load_records_from(Record*& records, size_t& size, const char* filename) {
+    FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file for reading: %s\n", filename);
+        return;
+    }
+    
+    size = 0;
+    records = (Record*)malloc(ARRAY_SIZE * sizeof(Record));
+    if (records == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    while (fscanf(file, "%lu,%256[^\n]\n", &records[size].key, records[size].rpayload) == 2) {
+        records[size].rpayload = (char*)malloc(RECORD_PAYLOAD * sizeof(char));
+        if (records[size].rpayload == NULL) {
+            fprintf(stderr, "Memory allocation for record payload failed\n");
+            fclose(file);
+            exit(EXIT_FAILURE);
+        }
+        size++;
+    }
+    
+    fclose(file);
+}
+
 #endif
