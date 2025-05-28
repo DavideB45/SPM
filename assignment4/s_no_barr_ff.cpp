@@ -51,47 +51,55 @@ struct Worker: ff_node_t<task> {
 struct Emitter: ff_monode_t<task> {
 
 	
-	size_t begin = 0;
 	size_t tot_tasks = ARRAY_SIZE/TASK_SIZE + (ARRAY_SIZE % TASK_SIZE != 0 ? 1 : 0);
 	size_t count = 0;
 	size_t current_size = TASK_SIZE;
+	int* mergeable = new int[ARRAY_SIZE/2 + 1]; // Array to keep track of mergeable tasks
 
 	task *svc(task *in) {
 		if (in == nullptr) { // first call
-			for (size_t i = 0; i < tot_tasks; i++){
-				
+			size_t begin = 0;
+			while (begin < ARRAY_SIZE) {
 				ff_send_out(new task(begin, std::min(begin + TASK_SIZE, ARRAY_SIZE), 0));
-				
-				begin = begin + TASK_SIZE;
-				if (begin >= ARRAY_SIZE) {
-					return GO_ON; // no more tasks
-				}
+				begin += TASK_SIZE;
 			}
+			for (size_t i = 0; i < ARRAY_SIZE/2 + 1; ++i) {
+				mergeable[i] = 0; // Initialize mergeable array
+			}
+			return GO_ON; // no more tasks
 		}
-		delete in; // delete the task we just processed
-		// check hash collision
-		// someting coming back from Workers
-		if(++count < tot_tasks) {
-			return GO_ON; // keep me alive
-		}
-		// all tasks are done
-		// can merge more
-		size_t merge_start = 0;
-		tot_tasks = 0;
-		while (merge_start + current_size < ARRAY_SIZE) {
-			size_t merge_end = std::min(merge_start + 2 * current_size, ARRAY_SIZE);
-			ff_send_out(new task(merge_start, merge_end, current_size));
-			merge_start = merge_end;
-			tot_tasks++;
-		}
-		current_size *= 2; // Double the chunk size
-		if (current_size >= ARRAY_SIZE) {
+
+		// check if it was the last one (start is the first element; and 2 times the size is equal or greater than the array size)
+		if(in->start_index == 0 && in->end_index >= ARRAY_SIZE) {
 			return EOS; // No more merging needed
 		}
-		//tot_tasks = ARRAY_SIZE / current_size;
-		count = 0; // Reset count for the next round of merging
 
-		return GO_ON; // Keep the emitter alive for the next round of merging
+		// received a task from workers
+		// set it in mergeable
+		size_t sorted_size = in->current_size ? in->current_size*2 : TASK_SIZE; // If current_size is 0, use TASK_SIZE
+		unsigned int index = (in->start_index / sorted_size) / 2 ;
+		// printf("Emitter received task: start_index=%zu, end_index=%zu, current_size=%zu, index=%u\n",
+		//   in->start_index, in->end_index, in->current_size, index);
+		if (mergeable[index] < (int) sorted_size/TASK_SIZE) { // 1, 2, 3 (level of merge)
+			// Update the mergeable size for this task
+			mergeable[index] = sorted_size/TASK_SIZE;
+			// printf("Waiting for the other part\n");
+			delete in; // delete the task we just processed
+			return GO_ON; // keep me alive
+		} else {
+			// gthe other half is ready
+			// Merge the two halves
+			in->start_index = index * sorted_size*2;
+			if(in->current_size == 0) {
+				in->current_size = TASK_SIZE;
+			} else {
+				in->current_size = sorted_size; // Double the chunk size
+			}
+			in->end_index = std::min(in->start_index + 2 * in->current_size, ARRAY_SIZE);
+			// printf("Merging task: start_index=%zu, end_index=%zu, current_size=%zu\n",
+			// 	  in->start_index, in->end_index, in->current_size);
+			return in;
+		}
 	}
 };
 
@@ -127,6 +135,6 @@ int main(int argc, char** argv) {
 
 	TIMERSTOP(sort_records);
 
-	//print_records(records, ARRAY_SIZE);
+	// print_records(records, ARRAY_SIZE);
 	free_records(records, ARRAY_SIZE);
 }
