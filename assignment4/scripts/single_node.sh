@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=ff Tests     # Job name
+#SBATCH --job-name=ff_tests     # Job name
 #SBATCH --output=output.log     # Save output to a file
 #SBATCH --error=error.log       # Save error messages
 #SBATCH --time=00:30:00         # there are many tests
