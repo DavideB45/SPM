@@ -10,7 +10,7 @@ descrizione concettuale dello splitting di come dovrebbe essere
 descrizione della prima versinoe naive 
 descrizione dei 2 problemi che presenta questa versione
 soluzione al primo (togliere il blocco)
-soluzione al secondo (usare attivamente l'emitter (solo efficienza??))
+soluzione al secondo (usare attivamente l'emitter (solo efficienza??)) (queue size decided with very few test on personal computer)
 #### considerazioni
 struttura del task
 struttura del codice

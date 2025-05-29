@@ -9,8 +9,11 @@
 srun make all -j
 
 # Run the sequential tests
-srun ./scripts/test_sequential.sh
+# srun ./scripts/test_sequential.sh
 
 # Run the parallel tests
 srun ./scripts/test_naive_ff.sh
-srun ./scripts/test_working_emitter_ff.sh
+# srun ./scripts/test_working_emitter_ff.sh
+
+# weak scaling tests
+srun ./scripts/test_weak_scaling.sh

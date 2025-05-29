@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
 
 	farm.remove_collector(); // No collector needed for this example
 	farm.wrap_around();
-	farm.set_scheduling_ondemand(10); // Use ondemand scheduling
+	farm.set_scheduling_ondemand(1); // Use ondemand scheduling
 	
 	if (farm.run_and_wait_end() < 0) {
 		fprintf(stderr, "Error running farm\n");
