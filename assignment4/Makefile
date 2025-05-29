@@ -31,7 +31,7 @@ all: $(TARGET)
 
 
 clean: 
-	-rm -fr *.o *~
+	-rm -fr *.o *.a *~
 cleanall: clean
 	-rm -fr $(TARGET) *.d ./socket*
 
