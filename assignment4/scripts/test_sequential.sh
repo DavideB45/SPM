@@ -7,7 +7,7 @@ OUTPUT_FILE="results/sequential.csv"  # Log file
 #initialize the csv file
 echo "trial,payload,size,time" > $OUTPUT_FILE
 
-for i in {1..5}; do 
+for i in {1..1}; do 
     # loop through each payload
     for payload in "${PAYLOADS[@]}"; do
         # loop through each array size

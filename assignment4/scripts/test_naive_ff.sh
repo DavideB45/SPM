@@ -9,7 +9,7 @@ OUTPUT_FILE="results/naive_ff.csv"  # Log file
 #initialize the csv file
 echo "trial,payload,size,task_size,workers,time" > $OUTPUT_FILE
 
-for i in {1..5}; do 
+for i in {1..1}; do 
     # loop through each payload
     for payload in "${PAYLOADS[@]}"; do
         # loop through each array size
