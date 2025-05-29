@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PAYLOADS=(1 64)
+PAYLOADS=(1)
 ARRAY_SIZE=(10000 100000 1000000 10000000 50000000 100000000)
 TASK_SIZES=(-1 128 10000 25000 100000)
 WORKERS=(1 3 7 15 31) # this are the numbers because the total is +1 for the emitter
