@@ -6,6 +6,11 @@ the task seem to be again memory bound, indeed, if we use the inplace merge sort
 ## Versions
 
 ### FastFlow
+descrizione concettuale dello splitting di come dovrebbe essere
+descrizione della prima versinoe naive 
+descrizione dei 2 problemi che presenta questa versione
+soluzione al primo (togliere il blocco)
+soluzione al secondo (usare attivamente l'emitter (solo efficienza??))
 #### considerazioni
 struttura del task
 struttura del codice
@@ -15,9 +20,9 @@ eliminare task
 #### Todo
 - [x] far lavorare l'emitter (fai la cosa che ha detto Andrea)
 - [x] emettere quando pronti (non ha funzionato molto bene, e l'implementazion risultava molto complessa quindi il progetto e' stato abbandonato. Magari funziona meglio quando stiamo su altre dimensioni con i numeri o con i thread. In ogni caso fare un po' di test per confermare)
-- [ ] recicle memory
-- [ ] leggere da un file
-- [ ] cambiare definizione del numero di thread
+- [x] recicle memory
+- [ ] leggere da un file??
+- [x] cambiare definizione del numero di thread
 
 ### MPI
 Scegliere il problema, vogliamo partire da un nodo? vogliamo partire da un file?
@@ -36,4 +41,6 @@ discutere il fatto che sia possibile anche fare una versione in cui la comunicaz
 massimo un nodo e lo tieni buono per gli altri
 spiegare perche' solo un piload di uno e' stato usato nella versione ff
 
+## Future improvements
 more test are needed to check the oversubription of the processors in ff with blocking queue
+thread pinning, can be checked although no significant performance improvements is expected, given how ff heuristic
