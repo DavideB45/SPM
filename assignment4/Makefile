@@ -10,6 +10,9 @@ INCLUDES             = $(INCS)
 SOURCES              = $(wildcard *.cpp)
 TARGET               = $(SOURCES:.cpp=)
 
+MPI_CXXFLAGS         = $(CXXFLAGS) -I$(MPI_INCLUDE_PATH)
+MPI_LIBS             = -lmpi
+
 .PHONY: all clean cleanall 
 .SUFFIXES: .c .cpp .o
 
@@ -26,8 +29,10 @@ TARGET               = $(SOURCES:.cpp=)
 %: %.cpp
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(OPTIMIZE_FLAGS) -o $@.a $< $(LDFLAGS) $(LIBS)
 
-all: $(TARGET)
+s_mpi: s_mpi.cpp
+	mpicxx $(INCLUDES) $(MPI_CXXFLAGS) $(OPTIMIZE_FLAGS) -o $@.a $< $(LDFLAGS) $(MPI_LIBS)
 
+all: $(TARGET)
 
 
 clean: 
