@@ -39,6 +39,12 @@ int parse_argv(int argc, char* argv[]) {
 				TASK_SIZE = ARRAY_SIZE / NUM_THREADS + (ARRAY_SIZE % NUM_THREADS != 0 ? 1 : 0);
 			}
 			
+		} else if (arg == "-b" && i + 1 < argc) {
+			MPI_BUFF_SIZE = std::stoull(argv[++i]);
+			if (MPI_BUFF_SIZE == 0) {
+				fprintf(stderr, "Error: MPI buffer size must be greater than 0\n");
+				return i;
+			}
 		} else if (arg == "-h" || arg == "--help") {
 			printf("Usage: %s [options]\n", argv[0]);
 			printf("Options:\n");
@@ -46,6 +52,7 @@ int parse_argv(int argc, char* argv[]) {
 			printf("  -r <payload>    Set the size of the record payload (default: %lu)\n", RECORD_PAYLOAD);
 			printf("  -t <threads>    Set the number of threads (default: %lu)\n", NUM_THREADS);
 			printf("  -k <task_size>  Set the task size for parallel processing (default: %lu)\n", TASK_SIZE);
+			printf("  -b <buffer_size> Set the MPI buffer size (default: %u)\n", MPI_BUFF_SIZE);
 			printf("  -h, --help      Show this help message\n");
 			exit(0);
 		} else {

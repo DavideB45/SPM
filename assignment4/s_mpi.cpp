@@ -27,10 +27,54 @@ int main(int argc, char* argv[]) {
 		//printf("\n");
 	}
 
+	TIMERSTART(sort_records);
 	unsigned long received_size = 0;
-	Record* local_records = distribute_records(records, ARRAY_SIZE, rank, size, &received_size);
-	//printf("Rank %d received %lu records\n", rank, received_size);
-	sort_records(local_records, received_size);
+	unsigned int remaining = ARRAY_SIZE;
+	// quanti?
+	// (dimensione totale circa) = arraysize/size 
+	// buffer = totale/dimensione + 1 (il +1 e' per sicurezza)
+	Record** all_records = (Record**) malloc(((ARRAY_SIZE/size)/MPI_BUFF_SIZE + 1)*sizeof(Record*));
+	all_records[0] = distribute_records(
+		records, 
+		std::min(MPI_BUFF_SIZE*size, (unsigned int) ARRAY_SIZE), 
+		rank, 
+		size, 
+		&received_size
+	);
+	remaining -= std::min(MPI_BUFF_SIZE*size, (unsigned int) ARRAY_SIZE);
+	MPI_Request request;
+	MPI_Status status;
+	int total_receive = 0;
+	int to_send = 0;
+	while (remaining > 0){
+		if(!rank)
+			printf("Rank %d: Distributing records, remaining to distribute: %u\n", rank, remaining);
+		to_send = std::min(MPI_BUFF_SIZE*size, remaining);
+		i_distribute_records(
+			records + ARRAY_SIZE - remaining,
+			to_send,
+			rank,
+			size,
+			&(all_records[total_receive + 1]),
+			&received_size,
+			&request
+		);
+		if(rank)
+			printf("Rank %d: received: %lu\n", rank, received_size);
+		remaining -= to_send;
+		sort_records(all_records[total_receive], received_size);
+		total_receive++;
+		MPI_Wait(&request, &status);
+	}
+	sort_records(all_records[total_receive], received_size);
+	MPI_Finalize();
+	return 0;
+	//merge the records
+	for(int i = 0; i < total_receive; i++){
+
+	}
+	
+	Record* local_records = nullptr;
 	int num_computers = size; // number of computers still working in the cluster
 	unsigned long chunk_size = ARRAY_SIZE / num_computers; // expected received dimention
 	unsigned long current_size = received_size; // current size of the records in the buffer
@@ -49,27 +93,18 @@ int main(int argc, char* argv[]) {
 			return 0;
 		}
 		// merge local_records with new_records
-		Record* merged_records = (Record*) malloc((current_size + received_size) * sizeof(Record));
-		if (merged_records == nullptr) {
-			fprintf(stderr, "Memory allocation failed for merged records\n");
+		Record* merged_records = nullptr;
+		if (!std_merge_records(local_records, current_size, new_records, received_size, &merged_records)) {
+			fprintf(stderr, "Merge operation failed\n");
 			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		std::merge(local_records, local_records + current_size, new_records, new_records + received_size, merged_records, [](const Record& a, const Record& b) {
-			return a.key < b.key;
-		});
-		free_records_quick(local_records, current_size);
-		free_records_quick(new_records, received_size);
-		local_records = merged_records;
-		current_size += received_size; // update the current size
-		chunk_size *= 2; // double the chunk size for the next iteration
-		num_computers /= 2; // halve the number of computers still working
-		modulo *= 2; // double the modulo for the next iteration
-		offset *= 2; // double the offset for the next rank to receive from
+		local_records = merged_records; current_size += received_size; 
+		chunk_size *= 2; num_computers /= 2;	modulo *= 2; offset *= 2;
 		//printf("Rank %d merged records, new size: %lu\n", rank, current_size);
 	}
+	TIMERSTOP(sort_records);
 	
-	
-	print_records(local_records, current_size, false);
+	//print_records(local_records, current_size, false);
 
 	MPI_Finalize();
 	return 0;

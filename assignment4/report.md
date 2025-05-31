@@ -40,6 +40,18 @@ discutere il fatto che sia possibile anche fare una versione in cui la comunicaz
 ## TEST
 massimo un nodo e lo tieni buono per gli altri
 spiegare perche' solo un piload di uno e' stato usato nella versione ff
+### Fast flow
+strong scaling
+weak scaling
+efficiency
+
+### MPI
+strong scaling (2 dimensioni diverse)
+comparison con 16 thread (che sembra il numero migliore in media)
+comparison sequenziale vs sequenziale
+
+double buffering....
+
 
 ## Future improvements
 more test are needed to check the oversubription of the processors in ff with blocking queue

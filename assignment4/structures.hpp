@@ -59,6 +59,29 @@ inline void sort_records(Record* records, size_t size) {
     });
 }
 
+inline bool std_merge_records(Record* arr1, size_t size1, Record* arr2, size_t size2, Record** result){
+    if (arr1 == nullptr || arr2 == nullptr) {
+        fprintf(stderr, "One of the arrays is null\n");
+        return false;
+    }
+    *result = (Record*)malloc((size1 + size2) * sizeof(Record));
+    if (*result == nullptr) {
+        fprintf(stderr, "Memory allocation failed for merged records\n");
+        return false;
+    }
+    std::merge(
+        arr1, arr1 + size1, 
+        arr2, arr2 + size2, 
+        *result, 
+        [](const Record& a, const Record& b) {
+            return a.key < b.key;
+        }
+    );
+    free_records_quick(arr1, size1);
+    free_records_quick(arr2, size2);
+    return true;
+}
+
 inline void print_records(const Record* records, size_t size, bool payoload_address = false) {
     for (size_t i = 0; i < size; i++) {
         if (payoload_address)
