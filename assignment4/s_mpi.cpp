@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
 	int to_send = 0;
 	while (remaining > 0){
 		if(!rank)
-			printf("Rank %d: Distributing records, remaining to distribute: %u\n", rank, remaining);
+			printf("\033[1;32mRank %d: Distributing records, remaining to distribute: %u\033[0m\n", rank, remaining);
 		to_send = std::min(MPI_BUFF_SIZE*size, remaining);
 		i_distribute_records(
 			records + ARRAY_SIZE - remaining,
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 			&request
 		);
 		if(rank)
-			printf("Rank %d: received: %lu\n", rank, received_size);
+			printf("\033[1;%dmRank %d: received: %lu\033[0m\n", 32 + rank % 7, rank, received_size);
 		remaining -= to_send;
 		sort_records(all_records[total_receive], received_size);
 		total_receive++;

@@ -56,3 +56,8 @@ double buffering....
 ## Future improvements
 more test are needed to check the oversubription of the processors in ff with blocking queue
 thread pinning, can be checked although no significant performance improvements is expected, given how ff heuristic
+
+## Referece to docs to motivate
+[Finalize](https://www.mpich.org/static/docs/v3.1/www3/MPI_Finalize.html)
+[Receive](https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Recv.3.html)
+[Scatter](https://www.open-mpi.org/doc/v3.1/man3/MPI_Scatter.3.php)
