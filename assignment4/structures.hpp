@@ -30,9 +30,10 @@ Record* random_generate(size_t size, unsigned int seed = 0) {
 			exit(EXIT_FAILURE);
 		}
 		// Fill the payload with random data
-		for (size_t j = 0; j < RECORD_PAYLOAD; j++) {
+		for (size_t j = 0; j < RECORD_PAYLOAD - 1; j++) {
 			records[i].rpayload[j] = 'A' + (rand() % 26); // Random character A-Z
 		}
+        records[i].rpayload[RECORD_PAYLOAD - 1] = '\0'; // Null-terminate the string
 	}
 	return records;
 }
@@ -41,6 +42,10 @@ void free_records(Record* records, size_t size) {
     for (size_t i = 0; i < size; i++) {
         free(records[i].rpayload);
     }
+    free(records);
+}
+
+void free_records_quick(Record* records, size_t size) {
     free(records);
 }
 
@@ -54,9 +59,12 @@ inline void sort_records(Record* records, size_t size) {
     });
 }
 
-inline void print_records(const Record* records, size_t size) {
+inline void print_records(const Record* records, size_t size, bool payoload_address = false) {
     for (size_t i = 0; i < size; i++) {
-        printf("Key: %lu, Payload: %s\n", records[i].key , records[i].rpayload);
+        if (payoload_address)
+            printf("Key: %lu, Payload Address: %p\n", records[i].key, (void*)records[i].rpayload);
+        else
+            printf("Key: %lu, Payload: %s\n", records[i].key , records[i].rpayload);
     }
 }
 
