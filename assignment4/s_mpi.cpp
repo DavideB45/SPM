@@ -29,6 +29,7 @@ int main(int argc, char* argv[]) {
 
 	TIMERSTART(sort_records);
 	unsigned long received_size = 0;
+	unsigned long unreceived_size = 0;
 	unsigned int remaining = ARRAY_SIZE;
 	// quanti?
 	// (dimensione totale circa) = arraysize/size 
@@ -47,8 +48,8 @@ int main(int argc, char* argv[]) {
 	int total_receive = 0;
 	int to_send = 0;
 	while (remaining > 0){
-		if(!rank)
-			printf("\033[1;32mRank %d: Distributing records, remaining to distribute: %u\033[0m\n", rank, remaining);
+		// if(!rank)
+		// 	printf("\033[1;32mRank %d: Distributing records, remaining to distribute: %u\033[0m\n", rank, remaining);
 		to_send = std::min(MPI_BUFF_SIZE*size, remaining);
 		i_distribute_records(
 			records + ARRAY_SIZE - remaining,
@@ -56,25 +57,62 @@ int main(int argc, char* argv[]) {
 			rank,
 			size,
 			&(all_records[total_receive + 1]),
-			&received_size,
+			&unreceived_size,
 			&request
 		);
-		if(rank)
-			printf("\033[1;%dmRank %d: received: %lu\033[0m\n", 32 + rank % 7, rank, received_size);
+		// if(rank)
+		// 	printf("\033[1;%dmRank %d: received: %lu\033[0m\n", 32 + rank % 7, rank, received_size);
 		remaining -= to_send;
 		sort_records(all_records[total_receive], received_size);
 		total_receive++;
 		MPI_Wait(&request, &status);
+		received_size = unreceived_size;
 	}
+	// if(rank)
+	// 	printf("\033[1;%dmRank %d: received: %lu\033[0m\n", 32 + rank % 7, rank, received_size);
 	sort_records(all_records[total_receive], received_size);
-	MPI_Finalize();
-	return 0;
-	//merge the records
-	for(int i = 0; i < total_receive; i++){
+	//MPI_Finalize();
+	//return 0;
 
+	//merge the records
+	if(total_receive == 0 && rank == 0) {
+		printf("Warning: No double buffering\n");
 	}
+	Record* local_records = all_records[total_receive];
+	for (int i = 0; i < total_receive; i++) {
+		std_merge_records(
+			all_records[i], MPI_BUFF_SIZE, 
+			local_records, received_size, 
+			&local_records
+		);
+		received_size += MPI_BUFF_SIZE;
+	}
+	free(all_records);
+	// Check if the records are sorted
+	// bool is_sorted = true;
+	// for (unsigned long i = 1; i < received_size; i++) {
+	// 	if (local_records[i - 1].key > local_records[i].key) {
+	// 		is_sorted = false;
+	// 		break;
+	// 	}
+	// }
+
+	// sleep(rank);
+	// if (!is_sorted) {
+	// 	printf("\033[1;%dmRank %d: Records are not sorted correctly\033[0m\n", 32 + rank % 7, rank);
+	// 	printf("\033[1;%dmRank %d: received size: %lu\033[0m\n", 32 + rank % 7, rank, received_size);
+	// 	for (size_t i = 0; i < received_size; i++){
+	// 		printf("\033[1;%dm %lu\033[0m ", 32 + rank % 7, local_records[i].key);
+	// 	}
+	// 	printf("\n");
+		
+	// } else {
+	// 	printf("\033[1;%dmRank %d: Records are sorted correctly\033[0m\n", 32 + rank % 7, rank);
+	// }
+	//MPI_Finalize();
+	//return 0;
 	
-	Record* local_records = nullptr;
+	
 	int num_computers = size; // number of computers still working in the cluster
 	unsigned long chunk_size = ARRAY_SIZE / num_computers; // expected received dimention
 	unsigned long current_size = received_size; // current size of the records in the buffer

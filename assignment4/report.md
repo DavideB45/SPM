@@ -46,6 +46,8 @@ weak scaling
 efficiency
 
 ### MPI
+
+lost stability (results may be 'different')
 strong scaling (2 dimensioni diverse)
 comparison con 16 thread (che sembra il numero migliore in media)
 comparison sequenziale vs sequenziale
