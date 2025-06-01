@@ -73,7 +73,7 @@ void i_distribute_records(Record* records, int size, int rank, int world_size, R
             0, // send count (not used for non-root processes)
             0, // Datatype of send buffer elements (handle, significant only at root). 
             *receive_buffer, // REceive buffer
-            MPI_BUFF_SIZE * sizeof(Record), // max Number of elements in receive buffer (integer).
+            chunk_size * sizeof(Record), // max Number of elements in receive buffer (integer).
             MPI_BYTE, //Datatype of receive buffer elements (handle). 
             0, // Root process rank
             MPI_COMM_WORLD,  // Communicator

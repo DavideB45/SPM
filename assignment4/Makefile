@@ -32,6 +32,9 @@ MPI_LIBS             = -lmpi
 s_mpi: s_mpi.cpp
 	mpicxx $(INCLUDES) $(MPI_CXXFLAGS) $(OPTIMIZE_FLAGS) -o $@.a $< $(LDFLAGS) $(MPI_LIBS)
 
+s_mpi_ff: s_mpi_ff.cpp
+	mpicxx $(INCLUDES) $(MPI_CXXFLAGS) $(OPTIMIZE_FLAGS) -o $@.a $< $(LDFLAGS) $(MPI_LIBS)
+
 all: $(TARGET)
 
 

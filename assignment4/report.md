@@ -53,15 +53,19 @@ comparison con 16 thread (che sembra il numero migliore in media)
 comparison sequenziale vs sequenziale
 
 double buffering....
-
+provare con piu' nodi (job)
 
 ## Future improvements
 more test are needed to check the oversubription of the processors in ff with blocking queue
 thread pinning, can be checked although no significant performance improvements is expected, given how ff heuristic
+
+possibile miglioramento per MPI mettendo i merge dei pezzetti prima (mentre riecevi gli altri)
+
+Il  double buffering forse non va perche' il successivo merge richiede di fare piu' lavoro (un'altra scan dei dati) che non c'e' se unsiamo solamente un buffer
 
 ## Referece to docs to motivate
 [Finalize](https://www.mpich.org/static/docs/v3.1/www3/MPI_Finalize.html)
 [Receive](https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Recv.3.html)
 [Scatter](https://www.open-mpi.org/doc/v3.1/man3/MPI_Scatter.3.php)
 
-[Quelli che cel'hanno fatta](https://arxiv.org/pdf/2003.01216)
+[Quelli che ce l'hanno fatta](https://arxiv.org/pdf/2003.01216)

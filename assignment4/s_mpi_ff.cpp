@@ -14,50 +14,44 @@
 using namespace ff;
 Record* records = nullptr;
 
+
 // how to use this pair"
 struct task {
-	bool sort_task; 
-	bool inplace_merge;
-	Record* arr1;
-	Record* arr2; // second array for merging (if inplace_merge is false) else nullptr
-	size_t s1; // start index for sorting | arr1 size for merging
-	size_t s2; //  end index for sorting  | arr2 size for merging
+	size_t start_index;
+	size_t end_index; // if negative, full sort; if positive, merge
+	size_t current_size; // additional field to track the current size
 
 	// Constructor
-	task(bool sort, bool merge, Record* arr1, Record* arr2, size_t s1, size_t s2)
-		: sort_task(sort), inplace_merge(merge), arr1(arr1), arr2(arr2), s1(s1), s2(s2) {}
+	task(size_t start, size_t end, size_t size = 0)
+		: start_index(start), end_index(end), current_size(size) {}
 };
+
 
 struct Worker: ff_node_t<task> {
 	task *svc(task *in) {
-		if (in->sort_task) {
+		if (in->current_size == 0) {
 			// Full sort task
-			sort_records(records + in->s1, in->s1 - in->s2);
-			return in;
-		} elif(in->inplace_merge) {
-			// Merge task
-			// Merge [in->start_index, mid) and [mid, in->end_index) in place
-			std::inplace_merge( in->arr1, in->arr1 + in->s1, in->arr2 + in->s2, [](const Record& a, const Record& b) {return a.key < b.key;});
+			sort_records(records + in->start_index, in->end_index - in->start_index);
 			return in;
 		} else {
-			// Regular merge task
-			Record* merged_records = nullptr;
-			if(!std_merge_records(in->arr1, in->s1, in->arr2, in->s2, &merged_records)){
-				// the thread is probably not worth but the merge failed so....
-				MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
-			}
-			in->arr1 = merged_records;
-			in->s1 += in->s2; in->s2 = 0; in->arr2 = nullptr;
-			return in; // Return the updated task
+			// Merge task
+			size_t mid = in->start_index + in->current_size;
+			
+			// Merge [in->start_index, mid) and [mid, in->end_index) in place
+			std::inplace_merge(
+				records + in->start_index, 
+				records + mid, 
+				records + in->end_index,
+				[](const Record& a, const Record& b) {
+					return a.key < b.key;
+				}
+			);
+			return in;
 		}
 		
 	}
 };
 
-// TODO: correct for distributed version:
-// - change the task structure
-// - add part for merging different arrays received from different scatters
-// generates the numbers
 struct Emitter: ff_monode_t<task> {
 
 	
@@ -68,6 +62,7 @@ struct Emitter: ff_monode_t<task> {
 
 	task *svc(task *in) {
 		if (in == nullptr) { // first call
+			tot_tasks = ARRAY_SIZE / TASK_SIZE + (ARRAY_SIZE % TASK_SIZE != 0 ? 1 : 0);
 			for (size_t i = 0; i < tot_tasks; i++){
 				task* t = new task(begin, std::min(begin + TASK_SIZE, ARRAY_SIZE), 0);
 				if (!ff_send_out(t, -1, 0)){
@@ -135,62 +130,79 @@ int main(int argc, char* argv[]) {
 	if(!initMPI(&argc, &argv, &rank, &size)) return -1;
 	
 	//TODO: substitute with a read from a file to speedup testing
+	Record* generated_ = nullptr;
 	if (rank == 0){
-		records = random_generate(ARRAY_SIZE);
+		generated_ = random_generate(ARRAY_SIZE);
 		//print_records(records, ARRAY_SIZE, false);
 		//printf("\n");
 	}
 
+	TIMERSTART(sort_records);
 	unsigned long received_size = 0;
-	Record* local_records = distribute_records(records, ARRAY_SIZE, rank, size, &received_size);
+	MPI_Request request;
+	i_distribute_records(
+		generated_, 
+		ARRAY_SIZE, 
+		rank, 
+		size, 
+		&records,
+		&received_size,
+		&request
+	);
+	MPI_Status status;
 	//printf("Rank %d received %lu records\n", rank, received_size);
 	//sort_records(local_records, received_size);
-	// Emitter emitter;
-	// ff_farm farm;
-	// farm.add_emitter(&emitter);
-	// std::vector<ff_node*> workers;
-	// for (unsigned long i = 0; i < NUM_THREADS; ++i) {
-	// 	Worker* worker = new Worker();
-	// 	workers.push_back(worker);
-	// }
-	// farm.add_workers(workers);
+	Emitter emitter;
+	ff_farm farm;
+	farm.add_emitter(&emitter);
+	std::vector<ff_node*> workers;
+	for (unsigned long i = 0; i < NUM_THREADS; ++i) {
+		Worker* worker = new Worker();
+		workers.push_back(worker);
+	}
+	farm.add_workers(workers);
 
-	// farm.remove_collector(); // No collector needed for this example
-	// farm.wrap_around();
-	// farm.set_scheduling_ondemand(2);
-	// farm.run_and_wait_end();
-	sort_records(local_records, received_size);
+	farm.remove_collector(); // No collector needed for this example
+	farm.wrap_around();
+	farm.set_scheduling_ondemand(2);
+	
 	int num_computers = size; // number of computers still working in the cluster
 	unsigned long chunk_size = ARRAY_SIZE / num_computers; // expected received dimention
 	unsigned long current_size = received_size; // current size of the records in the buffer
 	Record* new_records = nullptr;
 	int modulo = 2;
 	int offset = 1; // offset for the next rank to receive from
+	ARRAY_SIZE = received_size; 
+	MPI_Wait(&request, &status);
+	//printf("%d Starting work\n", rank);
+	
+	farm.run_and_wait_end();
+	//printf("%d Sorting completed", rank);
 	while (num_computers > 1) {
 		if(rank % modulo == 0) {
 			// receive 
 			new_records = receive_records(rank + offset, chunk_size, &received_size);
 		} else {
 			// send to rank -1
-			send_records(rank - offset, local_records, current_size);
-			free_records_quick(local_records, received_size);
+			send_records(rank - offset, records, current_size);
+			free_records_quick(records, received_size);
 			MPI_Finalize();
 			return 0;
 		}
 		// merge local_records with new_records
 		Record* merged_records = nullptr;
-		if (!std_merge_records(local_records, current_size, new_records, received_size, &merged_records)) {
+		if (!std_merge_records(records, current_size, new_records, received_size, &merged_records)) {
 			fprintf(stderr, "Merge operation failed\n");
 			MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
 		}
-		local_records = merged_records; current_size += received_size; 
+		records = merged_records; current_size += received_size; 
 		chunk_size *= 2; num_computers /= 2;	modulo *= 2; offset *= 2;
 		//printf("Rank %d merged records, new size: %lu\n", rank, current_size);
 	}
 	
+	TIMERSTOP(sort_records);
 	
-	print_records(local_records, current_size, false);
-
+	//print_records(records, current_size, false);
 	MPI_Finalize();
 	return 0;
 }
