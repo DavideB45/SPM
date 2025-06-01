@@ -83,6 +83,43 @@ void i_distribute_records(Record* records, int size, int rank, int world_size, R
     }
 }
 
+void i_distribute_inplace(Record* to_distribute, int size, int rank, int world_size, Record* receive_buffer, unsigned long * received_size, MPI_Request* request) {
+    if (rank == 0) {
+        int chunk_size = size / world_size;
+        MPI_Iscatter(
+            &(to_distribute[size % world_size]), // offset the buffer
+            chunk_size * sizeof(Record), 
+            MPI_BYTE,
+            receive_buffer, // receive buffer for root process
+            chunk_size* sizeof(Record),
+            MPI_BYTE,
+            0,
+            MPI_COMM_WORLD,
+            request
+        );
+        *received_size = chunk_size + size % world_size;
+        // fix for the remaining records
+        for (int i = 0; i < size % world_size; i++) {
+            receive_buffer[chunk_size + i].key = to_distribute[i].key;
+            receive_buffer[chunk_size + i].rpayload = to_distribute[i].rpayload;
+        }
+    } else {
+        int chunk_size = size / world_size;
+        MPI_Iscatter(
+            nullptr, // Address of the send buffer (not used for non-root processes)
+            0, // send count (not used for non-root processes)
+            0, // Datatype of send buffer elements (handle, significant only at root). 
+            receive_buffer, // REceive buffer
+            chunk_size * sizeof(Record), // max Number of elements in receive buffer (integer).
+            MPI_BYTE, //Datatype of receive buffer elements (handle). 
+            0, // Root process rank
+            MPI_COMM_WORLD,  // Communicator
+            request
+        );
+        *received_size = chunk_size;
+    }
+}
+
 void wait_for_distribute_records(MPI_Request* request, int* received_size) {
     MPI_Status status;
     MPI_Wait(request, &status);
