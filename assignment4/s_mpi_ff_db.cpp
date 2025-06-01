@@ -191,8 +191,14 @@ int main(int argc, char* argv[]) {
 			}
 		);
 	} while (total_sended < ARRAY_SIZE);
+	farm = create_farm();
+	MPI_Wait(&request, &status);
+	curr_rec_size += buffering_size;
+	received_size = buffering_size;
+	farm->run_and_wait_end();
+	delete farm;
 
-	printf("Rank %d: received %lu records\n", rank, curr_rec_size);
+	printf("\033[1;%dmRank %d: received %lu records\033[0m\n", 31 + rank, rank, curr_rec_size);
 	
 	while (num_computers > 1) {
 		if(rank % modulo == 0) {
@@ -218,7 +224,7 @@ int main(int argc, char* argv[]) {
 	
 	TIMERSTOP(sort_records);
 	
-	print_records(records, curr_rec_size, false);
+	//print_records(records, curr_rec_size, false);
 	MPI_Finalize();
 	return 0;
 }
