@@ -52,7 +52,7 @@ strong scaling (2 dimensioni diverse)
 comparison con 16 thread (che sembra il numero migliore in media)
 comparison sequenziale vs sequenziale
 
-double buffering....
+provare le MPI struct
 provare con piu' nodi (job)
 
 ## Future improvements

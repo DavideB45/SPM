@@ -131,4 +131,49 @@ inline void load_records_from(Record*& records, size_t& size, const char* filena
     fclose(file);
 }
 
+inline bool is_sorted(const Record* records, size_t size) {
+    for (size_t i = 1; i < size; i++) {
+        if (records[i].key < records[i - 1].key) {
+            return false;
+        }
+    }
+    return true;
+}
+
+Record* copy_records_key(const Record* records, size_t size) {
+    Record* new_records = (Record*)malloc(size * sizeof(Record));
+    if (new_records == NULL) {
+        fprintf(stderr, "Memory allocation failed for copied records\n");
+        exit(EXIT_FAILURE);
+    }
+    for (size_t i = 0; i < size; i++) {
+        new_records[i].key = records[i].key;
+        new_records[i].rpayload = records[i].rpayload; // Copying the pointer, not the content
+    }
+    return new_records;
+}
+
+bool are_same_sets(const Record* arr1, size_t size1, const Record* arr2, size_t size2) {
+    if (size1 != size2) return false;
+    for (size_t i = 0; i < size1; i++) {
+        for (size_t j = 0; j < size2; j++) {
+            if (arr1[i].key == arr2[j].key && arr1[i].rpayload == arr2[j].rpayload) {
+                break;
+            }
+            if (j == size2 - 1) {
+                return false; // Key not found in arr2
+            }
+        }
+    }
+    return true; // All keys in arr1 found in arr2
+}
+
+bool contains_key(const Record* records, size_t size, unsigned long key) {
+    for (size_t i = 0; i < size; i++) {
+        if (records[i].key == key) {
+            return true;
+        }
+    }
+    return false;
+}
 #endif
