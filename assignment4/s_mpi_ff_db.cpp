@@ -127,7 +127,6 @@ int main(int argc, char* argv[]) {
 	
 	//TODO: substitute with a read from a file to speedup testing
 	if (rank == 0) records = random_generate(ARRAY_SIZE);
-	if (rank == 0) print_records(records, ARRAY_SIZE);
 
 	/* Compute upperbound to needed size for a single node
 	 number of sends is ARRAY_SIZE / (MPI_BUFF_SIZE * c_size) +0/1
@@ -236,7 +235,7 @@ int main(int argc, char* argv[]) {
 	
 	TIMERSTOP(sort_records);
 	
-	print_records(records, curr_rec_size, false);
+	//print_records(records, curr_rec_size, false);
 	
 	MPI_Finalize();
 	return 0;
