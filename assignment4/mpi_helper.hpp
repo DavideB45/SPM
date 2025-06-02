@@ -98,10 +98,9 @@ void i_distribute_inplace(Record* to_distribute, int size, int rank, int world_s
             request
         );
         *received_size = chunk_size + size % world_size;
-        // fix for the remaining records
         for (int i = 0; i < size % world_size; i++) {
             receive_buffer[chunk_size + i].key = to_distribute[i].key;
-            receive_buffer[chunk_size + i].rpayload = to_distribute[i].rpayload;
+            receive_buffer[chunk_size + i].rpayload = to_distribute[i].rpayload; // Copying the pointer, not the content
         }
     } else {
         int chunk_size = size / world_size;

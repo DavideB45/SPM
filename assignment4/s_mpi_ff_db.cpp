@@ -59,10 +59,10 @@ struct Emitter: ff_monode_t<task> {
 			for (size_t i = 0; i < tot_tasks; i++){
 				task* t = new task(begin, std::min(begin + TASK_SIZE, curr_rec_size), 0);
 				if (!ff_send_out(t, -1, 0)){
-                    sort_records(records + t->start_index, t->end_index - t->start_index);
-                    count++; // Decrease the total tasks count
-                    delete t; // Clean up the task
-                }
+					sort_records(records + t->start_index, t->end_index - t->start_index);
+					count++; // Decrease the total tasks count
+					delete t; // Clean up the task
+				}
 				begin = begin + TASK_SIZE;
 				if (begin >= curr_rec_size) {
 					return GO_ON; // no more tasks
@@ -79,15 +79,15 @@ struct Emitter: ff_monode_t<task> {
 		tot_tasks = 0;
 		while (merge_start + curr_t_size < curr_rec_size) {
 			size_t merge_end = std::min(merge_start + 2 * curr_t_size, curr_rec_size);
-            task* t = new task(merge_start, merge_end, curr_t_size);
+			task* t = new task(merge_start, merge_end, curr_t_size);
 			if(!ff_send_out(t, -1, 0)) {
-                std::inplace_merge(records + merge_start, records + merge_start + curr_t_size, records + merge_end,
-                    [](const Record& a, const Record& b) {
-                        return a.key < b.key;
-                    }
-                );
-                delete t; // Clean up the task
-            } else { tot_tasks++; }
+				std::inplace_merge(records + merge_start, records + merge_start + curr_t_size, records + merge_end,
+					[](const Record& a, const Record& b) {
+						return a.key < b.key;
+					}
+				);
+				delete t; // Clean up the task
+			} else { tot_tasks++; }
 			merge_start = merge_end;
 
 		}
@@ -126,8 +126,8 @@ int main(int argc, char* argv[]) {
 	if(!initMPI(&argc, &argv, &rank, &c_size)) return -1;
 	
 	//TODO: substitute with a read from a file to speedup testing
-	Record* generated_ = nullptr;
-	if (rank == 0) generated_ = random_generate(ARRAY_SIZE);
+	if (rank == 0) records = random_generate(ARRAY_SIZE);
+	if (rank == 0) print_records(records, ARRAY_SIZE);
 
 	/* Compute upperbound to needed size for a single node
 	 number of sends is ARRAY_SIZE / (MPI_BUFF_SIZE * c_size) +0/1
@@ -140,6 +140,7 @@ int main(int argc, char* argv[]) {
 	 we will receive from un upper rank (number of rank +1, +2, +4, etc.)
 	 each time teh number of records will be doubled
 	 this is not impossible to compute but hard, probably we can avoid it
+	 we did not avoided it, and gained a tini tiny bit of performance
 	*/
 	size_t full_size = (ARRAY_SIZE / c_size);
 	if (ARRAY_SIZE % MPI_BUFF_SIZE != 0) {
@@ -152,15 +153,13 @@ int main(int argc, char* argv[]) {
 	if (rank == 0) {
 		full_size += (ARRAY_SIZE % MPI_BUFF_SIZE) % c_size; // add the rest of the records
 	}
-	//if(rank == 0) {
-	//	records = generated_;
-	//} else {
+	if(rank != 0) {
 		records = (Record*)malloc(full_size * sizeof(Record));
-	//}
+	}
 	TIMERSTART(sort_records);
 	unsigned long buffering_size = 0;
 	MPI_Request request;
-	i_distribute_inplace(generated_, MPI_BUFF_SIZE*c_size, rank, c_size, records, &buffering_size, &request);
+	i_distribute_inplace(records, MPI_BUFF_SIZE*c_size, rank, c_size, records, &buffering_size, &request);
 	MPI_Status status;
 
 
@@ -178,7 +177,7 @@ int main(int argc, char* argv[]) {
 		curr_rec_size += buffering_size; // update current size
 		received_size = buffering_size;
 		i_distribute_inplace(
-			generated_ + total_sended,
+			records + total_sended,// in qualche modo il primo elemento viene perso
 			std::min(MPI_BUFF_SIZE * c_size, (unsigned int) (ARRAY_SIZE - total_sended)),
 			rank,
 			c_size,
@@ -196,10 +195,10 @@ int main(int argc, char* argv[]) {
 			}
 		);
 	} while (total_sended < ARRAY_SIZE);
-	farm = create_farm();
 	MPI_Wait(&request, &status);
 	curr_rec_size += buffering_size;
 	received_size = buffering_size;
+	farm = create_farm();
 	farm->run_and_wait_end();
 	delete farm;
 	std::inplace_merge(records, records + curr_rec_size - received_size, records + curr_rec_size,
@@ -207,17 +206,13 @@ int main(int argc, char* argv[]) {
 			return a.key < b.key;
 		}
 	);
-
 	//printf("\033[1;%dmR[%d] sorted %lu records, expecting to reach %lu\033[0m\n", 31 + rank, rank, curr_rec_size, full_size);
 
-	TIMERSTART(merge_records);
 	while (num_computers > 1) {
 		if(rank % modulo == 0) {
 			// receive 
 			//printf("\033[1;%dmR[%d] receiving %lu records from rank %d\033[0m\n", 31 + rank, rank, curr_rec_size, rank + offset);
-			TIMERSTART(receive_records);
 			receive_records_inplace(rank + offset, chunk_size, records + curr_rec_size, &received_size); 
-			TIMERSTOP(receive_records);
 		} else {
 			//printf("\033[1;%dmR[%d] sending %lu records to rank %d\033[0m\n", 31 + rank, rank, curr_rec_size, rank - offset);
 			// send to rank -1
@@ -238,11 +233,11 @@ int main(int argc, char* argv[]) {
 		chunk_size *= 2; num_computers /= 2;	modulo *= 2; offset *= 2;
 		//printf("Rank %d merged records, new size: %lu\n", rank, curr_rec_size);
 	}
-	TIMERSTOP(merge_records);
 	
 	TIMERSTOP(sort_records);
 	
-	//print_records(records, curr_rec_size, false);
+	print_records(records, curr_rec_size, false);
+	
 	MPI_Finalize();
 	return 0;
 }
