@@ -52,8 +52,13 @@ strong scaling (2 dimensioni diverse)
 comparison con 16 thread (che sembra il numero migliore in media)
 comparison sequenziale vs sequenziale
 
-provare le MPI struct
-provare con piu' nodi (job)
+ricreazione della farm ogni volta
+
+double buffering has a fatal flow, if we do multiple round we'll end up with multiple arrays to merge and the merge can be quite costly
+
+provare con piu' nodi (job) (non sembra andare)
+(siamo limitati dalla rete)
+altra parte lenta il merge finale che e' poco parallelizzabile
 
 ## Future improvements
 more test are needed to check the oversubription of the processors in ff with blocking queue
@@ -65,7 +70,9 @@ Il  double buffering forse non va perche' il successivo merge richiede di fare p
 
 ## Referece to docs to motivate
 [Finalize](https://www.mpich.org/static/docs/v3.1/www3/MPI_Finalize.html)
+
 [Receive](https://docs.open-mpi.org/en/main/man-openmpi/man3/MPI_Recv.3.html)
+
 [Scatter](https://www.open-mpi.org/doc/v3.1/man3/MPI_Scatter.3.php)
 
 [Quelli che ce l'hanno fatta](https://arxiv.org/pdf/2003.01216)
