@@ -151,6 +151,21 @@ Record* receive_records(int from, unsigned long expected_size, unsigned long* re
     return records;
 }
 
+void receive_records_inplace(int from, unsigned long expected_size, Record* records, unsigned long* received_size) {
+    MPI_Status status;
+    MPI_Recv(
+        records, // Receive buffer
+        expected_size * sizeof(Record), // Number of bytes to receive (at most) 
+        MPI_BYTE, // MPI datatype of the receive buffer elements
+        from, // Source rank (from which to receive)
+        0, // Message tag (not used here, )
+        MPI_COMM_WORLD, // Communicator 
+        &status // Status object to get information about the received message
+    );
+    MPI_Get_count(&status, MPI_BYTE, (int*)received_size);
+    *received_size /= sizeof(Record); // Convert byte count to record count
+}
+
 void send_records(int to, Record* records, unsigned long size) {
     MPI_Send(
         records, // Send buffer
