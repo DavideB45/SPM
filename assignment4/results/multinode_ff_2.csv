@@ -1,4 +1,4 @@
-nodes,trial,payload,size,buff_size,time
+nodes,trial,payload,size,buff_size,threads,time
 2,1,1,50000000,9999999999999,7,5.43818
 2,1,1,50000000,9999999999999,15,5.0383
 2,1,1,100000000,9999999999999,7,11.821
