@@ -6,8 +6,8 @@
 
 PAYLOADS=(1)
 ARRAY_SIZE=(10000000 50000000 100000000)
-MPI_BUFF_SIZE=(1000000 3000000 9999999999999)
-NODES_T=(2 4 8)
+MPI_BUFF_SIZE=(9999999999999)
+NODES_T=(1)
 OUTPUT_FILE="results/multinode_seq.csv"  # Log file
 
 # Initialize the CSV file
@@ -25,7 +25,7 @@ for N in ${NODES_T[@]}; do
                 echo -n "$N,$i,${PAYLOADS[0]},$size,$buff_size," >> $OUTPUT_FILE
                 srun --nodes=$N \
                      --ntasks-per-node=1 \
-                     --time=00:04:00 \
+                     --time=00:01:00 \
                      --mpi=pmix \
                      ./s_mpi.a -r "${PAYLOADS[0]}" -s "$size" -b "$buff_size" | grep 'sort_records' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
             done

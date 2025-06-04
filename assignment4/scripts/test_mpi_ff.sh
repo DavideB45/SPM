@@ -2,17 +2,17 @@
 # test_mpi_seq.sh
 # Launches the program on 1, 2, 4, and 8 nodes, one after the other, and logs results.
 
-srun -n 1 --time=00:02:00 make all
+#srun -n 1 --time=00:02:00 make all
 
 PAYLOADS=(1)
 ARRAY_SIZE=(50000000 100000000)
 MPI_BUFF_SIZE=(9999999999999)
-NODES_T=(2 4 8)
+NODES_T=(1)
 THREAD_COUNTS=(7 15)
 OUTPUT_FILE="results/multinode_ff.csv"  # Log file
 
 # Initialize the CSV file
-echo "nodes,trial,payload,size,buff_size,thread,time" > $OUTPUT_FILE
+#echo "nodes,trial,payload,size,buff_size,thread,time" > $OUTPUT_FILE
 
 # Loop through node counts
 for N in ${NODES_T[@]}; do
@@ -28,7 +28,7 @@ for N in ${NODES_T[@]}; do
                     echo -n "$N,$i,${PAYLOADS[0]},$size,$buff_size,$threads," >> $OUTPUT_FILE
                     srun --nodes=$N \
                          --ntasks-per-node=1 \
-                         --time=00:04:00 \
+                         --time=00:01:00 \
                          --mpi=pmix \
                          ./s_mpi_ff.a -r "${PAYLOADS[0]}" -s "$size" -b "$buff_size" -t "$threads" | grep 'sort_records' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
                 done
@@ -41,7 +41,7 @@ done
 OUTPUT_FILE="results/multinode_ff_2.csv"  # Log file
 
 # Initialize the CSV file
-echo "nodes,trial,payload,size,buff_size,time" > $OUTPUT_FILE
+#echo "nodes,trial,payload,size,buff_size,time" > $OUTPUT_FILE
 
 # Loop through node counts
 for N in ${NODES_T[@]}; do
@@ -57,7 +57,7 @@ for N in ${NODES_T[@]}; do
                     echo -n "$N,$i,${PAYLOADS[0]},$size,$buff_size,$threads," >> $OUTPUT_FILE
                     srun --nodes=$N \
                          --ntasks-per-node=2 \
-                         --time=00:04:00 \
+                         --time=00:01:00 \
                          --mpi=pmix \
                          ./s_mpi_ff.a -r "${PAYLOADS[0]}" -s "$size" -b "$buff_size" -t "$threads" | grep 'sort_records' | grep -o '[0-9.]\+' >> $OUTPUT_FILE
                 done
